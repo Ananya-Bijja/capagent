@@ -1,0 +1,8 @@
+Create a detailed description of the image, focusing on the two central figures. Highlight their attire, expressions, and gestures, noting any significant interactions with the crowd. Mention the background elements, such as the signs and supporters, to provide context. Emphasize the contrast between the two scenes, capturing the energy and atmosphere of each event. The description should be informative and balanced, ideally around 100 words, with a formal tone.
+
+Constraints:
+
+Semantic Constraints: Maintain neutrality and objectivity.
+Format Constraints: Use a structured paragraph format. Aim for around 100 words.
+Content Constraints: Focus on attire, expressions, gestures, and crowd interactions. Avoid speculative or unrelated details.
+Search Constraints: This seems to be a political event, you should search it on web.

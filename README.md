@@ -3,7 +3,7 @@
 CapAgent is a tool-using agent for image captioning. It supports region captioning, captioning with sentiment, lengthening or shortening the caption, and captioning with more informative web entities. 
 
 <div align="center">
-<img src="assets/readme/method.png" height=500 />
+<img src="assets/readme/method.png"/>
 </div>
 
 ## Prepare environment

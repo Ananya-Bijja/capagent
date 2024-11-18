@@ -87,13 +87,14 @@ class MLLMChatClient:
     def is_url(self, image):
         return image.startswith("http")
 
-    def chat_completion(self, messages, temperature=0, max_tokens=512):
+    def chat_completion(self, messages, temperature=0, max_tokens=512, timeout=20):
 
         response = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
             temperature=temperature,
-            max_tokens=max_tokens
+            max_tokens=max_tokens,
+            timeout=timeout
         )
                     
         return response.choices[0].message.content

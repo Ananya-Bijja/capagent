@@ -11,7 +11,7 @@ from capagent.agent import (
 from capagent.prompt import (
     ReActPrompt, 
     ASSISTANT_SYSTEM_MESSAGE, 
-    INSTRUCTION_AGENT_SYSTEM_MESSAGE
+    INSTRUCTION_AUGMENTATION_SYSTEM_MESSAGE
 )
 from capagent.execution import CodeExecutor
 from capagent.parse import Parser
@@ -85,7 +85,7 @@ def run_agent(user_query: str, working_dir: str, image_paths: list[str] = None):
 
     return chat_result, messages
 
-class InstructionComplexer:
+class InstructionAugmenter:
     
     # MONKEY PATCHING
     # TODO: find a better way to do this
@@ -97,7 +97,7 @@ class InstructionComplexer:
                 {
                     "type": "image_url",
                     "image_url": {
-                        "url": f"data:image/jpeg;base64,{encode_pil_to_base64(Image.open('data/cpi_examples/0.png').convert('RGB'))}"
+                        "url": f"data:image/jpeg;base64,{encode_pil_to_base64(Image.open('data/cia_examples/0.png').convert('RGB'))}"
                     }
                 },
                 {
@@ -106,14 +106,14 @@ class InstructionComplexer:
                 }
             ]
         },
-        {"role": "assistant", "content": open("data/cpi_examples/0.txt", "r").read()},
+        {"role": "assistant", "content": open("data/cia_examples/0.txt", "r").read()},
     ]
 
 
-    def generate_complex_instruction(self, image, query: str):
+    def generate_complex_instruction(self, image, query: str, timeout=20):
         
         messages = [
-            {"role": "system", "content": INSTRUCTION_AGENT_SYSTEM_MESSAGE}
+            {"role": "system", "content": INSTRUCTION_AUGMENTATION_SYSTEM_MESSAGE}
         ]
         messages += self.EXAMPLES
         messages += [   
@@ -133,7 +133,7 @@ class InstructionComplexer:
             }
         ]
 
-        return mllm_client.chat_completion(messages)
+        return mllm_client.chat_completion(messages, timeout=timeout)
 
 
 if __name__ == "__main__":

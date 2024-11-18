@@ -1,6 +1,6 @@
 # CapAgent
 
-CapAgent is a tool-using agent for image captioning. It supports region captioning, captioning with sentiment, lengthening or shortening the caption, and captioning with more informative web entities. 
+In this section, we introduce the CapAgent, an agent system with a variety of tools specifically designed to control the image captioning process. As shown in the following figure, like a general agent, CapAgent’s workflow includes three main steps: planning, tool usage, and observation. When the user inputs an image and a caption query, the CapAgent will generate a series of thoughts and corresponding actions to tackle the user request.
 
 <div align="center">
 <img src="assets/readme/method.png"/>
@@ -8,14 +8,11 @@ CapAgent is a tool-using agent for image captioning. It supports region captioni
 
 ## Prepare environment
 
-### Set SERP API Key
-```bash
-export SERP_API_KEY=<your-serp-api-key>
-```
 
-### Set OpenAI API Key
+### Set API Key
 ```bash
-export OPENAI_API_KEY=<your-openai-api-key>
+export SERP_API_KEY=<your-serp-api-key> # for search image on web
+export OPENAI_API_KEY=<your-openai-api-key> # for using gpt-4o
 ```
 
 ### Install dependencies
@@ -24,27 +21,32 @@ export OPENAI_API_KEY=<your-openai-api-key>
 pip install -r requirements.txt
 ```
 
-### Generate tool usage examples embedding
+### Generate CoT examples embedding
 ```bash
 bash init_rag_database.sh
 ```
 
-### Deploy visual tools
+### Launch server
+To let local image online for allowing api, e.g., google search, using url access the image.
 ```bash
-bash deploy_visual_tools.sh
+python launch_image_server.py
 ```
 
 ## Run CapAgent
-
+Run on a single image
 ```bash
 python run.py
 ```
 
+Run on gradio demo
+```bash
+python gradio_demo.py
+``` 
 
-## Customize tools in CapAgent
-### Add a new tool
+## Video Demo
+
+Comming soon ...
 
 
-
-
-
+## Contact
+Contact me if you have any questions. Email: wangxr@bupt.edu.cn

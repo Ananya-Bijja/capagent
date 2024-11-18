@@ -3,9 +3,10 @@ import gradio as gr
 import tempfile
 import os
 
-from run import run_agent, InstructionComplexer
+from run import run_agent, InstructionAugmenter
+from capagent.tools import count_words
 
-instruction_complexer = InstructionComplexer()
+instruction_augmenter = InstructionAugmenter()
 
 EXAMPLES = [
     # example 1
@@ -29,7 +30,7 @@ Search Constraints: This seems to be a special moment in history, please search 
     # example 3
     [
         "Captioning this image in a funny tone.", 
-        "assets/figs/funny_horse.png"
+        "assets/figs/funny_cat.png"
     ],
 
     # example 4
@@ -43,15 +44,36 @@ Search Constraints: This seems to be a special moment in history, please search 
         "Captioning this news photo.", 
         "assets/figs/trump_assassination.png"
     ],
+    
+    # example 6
+    [
+        f"Please describe the image within 30 words.", 
+        "assets/figs/statue_of_liberty.png"
+    ],
+
+    # example 7
+    [
+        f"Please describe this cab.", 
+        "assets/figs/cybercab.png"
+    ],
+
+    # example 8
+    [
+        "Please describe this image.", 
+        "assets/figs/venom.png"
+    ]
 ]
 
 
 
 def generate_complex_instruction(query: str, image: PIL.Image.Image):
-    return instruction_complexer.generate_complex_instruction(image, query)
+    try:
+        return instruction_augmenter.generate_complex_instruction(image, query, timeout=20)
+    except Exception as e:
+        return f"Timeout. Please try again."
 
 
-def process_query(query: str, image: PIL.Image.Image, complex_instruction: str) -> str:
+def process_query(query: str, image: PIL.Image.Image) -> str:
     try:
         # Create temporary directory for image processing
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -61,21 +83,11 @@ def process_query(query: str, image: PIL.Image.Image, complex_instruction: str) 
             image.save(image_path)
             image_paths = [image_path]
             
-            # Run the agent
-            if complex_instruction != "":   
-                result, messages = run_agent(
-                    user_query=complex_instruction, 
-                    working_dir=temp_dir, 
-                    image_paths=image_paths
-                )
-            else:
-                result, messages = run_agent(
-                    user_query=query, 
-                    working_dir=temp_dir, image_paths=image_paths
-                )
-
-            # for message in messages:
-            #     message['content'] = gr.Markdown(value=message['content'])
+            result, messages = run_agent(
+                user_query=query, 
+                working_dir=temp_dir, 
+                image_paths=image_paths
+            )
 
             return result, messages
         
@@ -97,13 +109,12 @@ def launch_gradio_demo():
             
             with gr.Column():
                 image_input = gr.Image(height=256, image_mode="RGB", type="pil", label="Image")
-                query_input = gr.Textbox(label="User Query", placeholder="e.g., 'Captioning an image with more accurate event information'", lines=2)
+                query_input = gr.Textbox(label="User Query", placeholder="e.g., 'Captioning an image with more accurate event information'", lines=2, submit_btn="Send")
                 with gr.Blocks():
-                    complex_instruction_input = gr.Textbox(label="Complex Instruction")
-                    complex_button = gr.Button("Generate Complex Instruction")
-                
+                    pro_instruction_input = gr.Textbox(label="Professional Instruction", submit_btn="Send")
+                    
                 with gr.Row():
-                    run_button = gr.Button("Run")
+                    complex_button = gr.Button("Generate Professional Instruction")
                     clear_button = gr.Button("Clear")
 
                 gr.Examples(
@@ -118,16 +129,28 @@ def launch_gradio_demo():
         complex_button.click(
             generate_complex_instruction, 
             inputs=[query_input, image_input], 
-            outputs=complex_instruction_input
+            outputs=pro_instruction_input
         )
 
-        run_button.click(
+        pro_instruction_input.submit(
             process_query, 
-            inputs=[query_input, image_input, complex_instruction_input], 
+            inputs=[pro_instruction_input, image_input], 
             outputs=[output_textbox, cot_textbox]
         )
 
-        clear_button.click(lambda: [None, None, None, None, None], outputs=[output_textbox, cot_textbox, complex_instruction_input, image_input, query_input])
+        query_input.submit(
+            process_query, 
+            inputs=[query_input, image_input], 
+            outputs=[output_textbox, cot_textbox]
+        )
+
+        clear_button.click(lambda: [None, None, None, None, None], outputs=[output_textbox, cot_textbox, pro_instruction_input, image_input, query_input])
+
+        output_textbox.change(
+            lambda x: gr.update(label=f"Agent Response {count_words(x)} words" if x else "Agent Response"), 
+            inputs=output_textbox, 
+            outputs=output_textbox
+        )
         
 
     

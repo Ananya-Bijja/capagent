@@ -8,8 +8,6 @@ from autogen.runtime_logging import log_new_agent, logging_enabled
 from typing import Callable, Dict, List, Literal, Optional, Union
 
 from capagent.indexing import load_vector_store, query_vector_store
-from capagent.prompt import INSTRUCTION_AGENT_SYSTEM_MESSAGE
-from capagent.chat_models.client import mllm_client
 
 def checks_terminate_message(msg):
     if isinstance(msg, str):

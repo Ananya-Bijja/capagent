@@ -1,7 +1,3 @@
-import PIL
-import base64
-from io import BytesIO
-
 from autogen.agentchat import ConversableAgent, Agent
 from autogen.runtime_logging import log_new_agent, logging_enabled
 

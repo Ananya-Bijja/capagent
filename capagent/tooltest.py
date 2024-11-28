@@ -1,6 +1,7 @@
+from re import search
 import PIL
 from capagent.tools import *
-from run import InstructionAugmenter
+from capagent.instruction_augmenter import InstructionAugmenter
 
 
 def test_count_words():
@@ -12,21 +13,21 @@ def test_shorten_caption():
 
 def test_single_image_visual_question_answering():
     image = PIL.Image.open("assets/trump_vs_harris.png").convert("RGB")
-    result = single_image_visual_question_answering("What is this image?", image)
+    result = visual_question_answering("What is this image?", image)
     count = count_words(result)
     print(result)
     print("The number of words in the caption is:", count)
 
 def test_detail_caption():
     image = PIL.Image.open("assets/cat.png").convert("RGB")
-    result = detail_caption(image, "The image shows a close-up of an orange tabby cat.", 3)
+    result = extend_caption(image, "The image shows a close-up of an orange tabby cat.", 3)
     print(result)
     count = count_words(result)
     print("The number of words in the detailed caption is:", count)
 
 def test_search_image_on_web():
     image = ImageData(image=None, image_url="http://367469ar22lb.vicp.fun/.tmp/image_1.png")
-    result = search_image_on_web(image)
+    result = google_lens_search(image)
     print(result)
 
 
@@ -36,13 +37,18 @@ def test_instruction_augmenter():
     result = instruction_augmenter.generate_complex_instruction(image, "Please describe this image within 100 words.")
     print(result)
 
+def test_google_search():
+    google_search("Who is Donald Trump?", show_result=True)
+
 
 if __name__ == "__main__":
     # test_count_words()
     # test_shorten_caption()
-    # test_coarse_caption()s
+    # test_coarse_caption()
     # test_single_image_visual_question_answering()
     # test_detail_caption()
-    # test_search_image_on_web()
-    test_instruction_augmenter()
+    
+    # test_instruction_augmenter()
+    test_search_image_on_web()
+    test_google_search()
 

@@ -7,7 +7,7 @@ ACTION 0:
 ```python
 caption = single_image_visual_question_answering(query="Please describe this image.", image_data=example_image_data)
 print("Caption:", caption)
-count = count_words(sentence=caption)
+count = count_words(caption=caption)
 print("The number of words in the caption is:", count)
 ```
 OBSERVATION: Execution success. The output is as follows:
@@ -17,9 +17,6 @@ THOUGHT 1: Since the length of the caption is less than 50 words, I need to use 
 ACTION 1:
 ```python
 result = detail_caption(image_data=example_image_data, caption=caption, iteration=3)
-print(result)
-count = count_words(result)
-print("The number of words in the detailed caption is:", count)
 ```
 OBSERVATION: Execution success. The output is as follows:
 Caption: The image shows a close-up of an orange tabby cat with well-groomed and fluffy fur, particularly noticeable on the neck and the visible part of the back, which has a smooth and healthy sheen. The cat's expression seems alert and possibly playful, with a wide-open mouth and visible teeth, indicating a vocalization that could be a playful meow or a yawn.

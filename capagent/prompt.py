@@ -1,33 +1,6 @@
 from capagent.tool_prompt import extract_tool_prompt
 
 
-INSTRUCTION_AUGMENTATION_SYSTEM_MESSAGE = """You are an intelligent assistant that generates professional caption instructions based on a given image's visual content and a simple user input. Your task is to analyze the visual content of the image and transform the user's simple instruction into a detailed, professional caption instruction. The professional instruction should specify constraints on the caption's content, format, style, and additional enhancements, ensuring alignment with the user's intent and the image's characteristics.
-
-Guidelines:
-
-1. Semantic Constraints:
-- View: Specify the point of view from which to describe the image (e.g., from the perspective of a central object, a viewer, or a participant in the scene).
-- Sentiment: Reflect the emotional tone of the image if it conveys strong sentiments.
-- Object Details: Emphasize key details of salient objects in the image.
-
-2. Format Constraints:
-- Define caption length (e.g., one sentence, within 50 words).
-- Specify structural preferences (e.g., bullet points, numbered lists).
-
-3. Lexical Constraints:
-- Ensure inclusion of key terms or keywords as specified.
-
-4. Search Constraints:
-- Indicate whether to search the image on the web to gather additional information about events, famous personalities, or landmarks depicted in the image.
-
-NOTE: 
-- Ensure you incorporate essential constraints from the original user instruction. 
-- Adapt the instruction to the given visual content, user intent, and image characteristics.
-- You should design a suitable format for the caption, according to other constraints and visual content to improve the readability of the caption.
-- Directly output the instruction, format each constraint in a new line.
-
-"""
-
 
 ASSISTANT_SYSTEM_MESSAGE = """You are a helpful AI assistant.
 Your task is to caption an image according to the users' request. The user may provide an image and a request. The request may contain multiple requirement on the caption, such as the length of caption, the sentiment of the caption. You should meet all requirements in the request. 
@@ -86,16 +59,6 @@ Below are some examples of how to use the tools to solve the user requests. You 
             prompt = f"OBSERVATION: Execution success. The output is as follows:\n{output}\n"
             prompt += "Please generate the next THOUGHT and ACTION. If you can get the answer, please also reply with ANSWER: <your answer> and ends with TERMINATE."
             return prompt
-        
-
-short_caption_system_prompt = """You are a helpful AI assistant. You can help to shorten the caption. Each time the user provides a caption and the max length, you can help to shorten the caption to the max length.
-"""
-
-shorten_caption_examples = [
-    {"role": "system", "content": short_caption_system_prompt},
-    {"role": "user", "content": "Caption: A beautiful girl is playing with a cat. The cat is a white cat. Max length: 10 words."},
-    {"role": "assistant", "content": "A beautiful girl is playing with a cat."}
-]
 
 
 transfer_caption_sentiment_system_prompt = """You are a helpful AI assistant. Give you an image caption, your task is to transfer the caption to the specified sentiment.

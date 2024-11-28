@@ -162,8 +162,10 @@ cython_debug/
 #.idea/
 
 chroma_db/
-expert_models/
+expert_models/GroundingDINO/
+expert_models/Depth-Anything-V2/
 wordnet_ic/
 .gradio/
 .vscode/
 flagged/
+eval/

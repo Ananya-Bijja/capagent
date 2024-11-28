@@ -10,8 +10,7 @@ from capagent.agent import (
 
 from capagent.prompt import (
     ReActPrompt, 
-    ASSISTANT_SYSTEM_MESSAGE, 
-    INSTRUCTION_AUGMENTATION_SYSTEM_MESSAGE
+    ASSISTANT_SYSTEM_MESSAGE
 )
 from capagent.execution import CodeExecutor
 from capagent.parse import Parser
@@ -84,56 +83,6 @@ def run_agent(user_query: str, working_dir: str, image_paths: list[str] = None):
     )
 
     return chat_result, messages
-
-class InstructionAugmenter:
-    
-    # MONKEY PATCHING
-    # TODO: find a better way to do this
-
-    EXAMPLES = [
-        {
-            "role": "user", "content": 
-            [
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/jpeg;base64,{encode_pil_to_base64(Image.open('data/cia_examples/0.png').convert('RGB'))}"
-                    }
-                },
-                {
-                    "type": "text",
-                    "text": "Please describe the image within 100 words. Please generate a professional instruction. Directly output the instruction without any other words."
-                }
-            ]
-        },
-        {"role": "assistant", "content": open("data/cia_examples/0.txt", "r").read()},
-    ]
-
-
-    def generate_complex_instruction(self, image, query: str, timeout=20):
-        
-        messages = [
-            {"role": "system", "content": INSTRUCTION_AUGMENTATION_SYSTEM_MESSAGE}
-        ]
-        messages += self.EXAMPLES
-        messages += [   
-            {
-                "role": "user", "content": [
-                    {
-                        "type": "image_url",
-                        'image_url': {
-                            'url': f"data:image/jpeg;base64,{encode_pil_to_base64(image)}"
-                        }
-                    },
-                    {
-                        'type': 'text', 
-                        'text': f"User instruction: {query}. Please generate a professional instruction. Directly output the instruction without any other words."
-                    }
-                ]
-            }
-        ]
-
-        return mllm_client.chat_completion(messages, timeout=timeout)
 
 
 if __name__ == "__main__":

@@ -3,8 +3,9 @@ import gradio as gr
 import tempfile
 import os
 
-from run import run_agent, InstructionAugmenter
+from capagent.instruction_augmenter import InstructionAugmenter
 from capagent.tools import count_words
+from run import run_agent
 
 instruction_augmenter = InstructionAugmenter()
 

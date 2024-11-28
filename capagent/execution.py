@@ -38,7 +38,7 @@ class CodeExecutor:
         for idx, path in enumerate(image_paths):
             code += f"""image_{idx+1} = Image.open("{path}").convert("RGB")\n"""
             code += f"""image_{idx+1}.save(".tmp/image_{idx+1}.png")\n"""
-            code += f"""image_data_{idx+1} = ImageData(image_{idx+1}, image_url="http://367469ar22lb.vicp.fun/.tmp/image_{idx+1}.png")\n"""
+            code += f"""image_data_{idx+1} = ImageData(image_{idx+1}, image_url="http://367469ar22lb.vicp.fun/.tmp/image_{idx+1}.png", local_path=".tmp/image_{idx+1}.png")\n"""
 
         return self.execute(code)
             

@@ -5,10 +5,8 @@
 THOUGHT 0: First, I need to use visual question answering tool to get the caption of the image. Then I need to check the number of words in the caption. 
 ACTION 0:
 ```python
-caption = single_image_visual_question_answering(query="Please describe this image.", image_data=example_image_data)
-print("Caption:", caption)
-count = count_words(caption=caption)
-print("The number of words in the caption is:", count)
+caption = visual_question_answering(query="Please describe this image.", image_data=example_image_data)
+count_words(caption=caption)
 ```
 OBSERVATION: Execution success. The output is as follows:
 Caption: The image shows a close-up of an orange tabby cat.
@@ -16,7 +14,7 @@ The number of words in the caption is: 11
 THOUGHT 1: Since the length of the caption is less than 50 words, I need to use the detail_caption tool to ask and answer questions to detail the caption.
 ACTION 1:
 ```python
-result = detail_caption(image_data=example_image_data, caption=caption, iteration=3)
+extend_caption(image_data=example_image_data, caption=caption, iteration=3)
 ```
 OBSERVATION: Execution success. The output is as follows:
 Caption: The image shows a close-up of an orange tabby cat with well-groomed and fluffy fur, particularly noticeable on the neck and the visible part of the back, which has a smooth and healthy sheen. The cat's expression seems alert and possibly playful, with a wide-open mouth and visible teeth, indicating a vocalization that could be a playful meow or a yawn.

@@ -75,6 +75,9 @@ Run on gradio demo
 ```bash
 python gradio_demo.py
 ``` 
+<div align="center">
+<img src="assets/readme/gradio_demo.png"/>
+</div>
 
 ## Video Demo
 

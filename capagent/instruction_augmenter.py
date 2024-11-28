@@ -1,38 +1,41 @@
 from capagent.chat_models.client import mllm_client
 from capagent.utils import encode_pil_to_base64
+from capagent.tool_prompt import extract_tool_prompt
 from PIL import Image
 
 
-INSTRUCTION_AUGMENTATION_SYSTEM_MESSAGE = """You are an intelligent assistant that generates professional caption instructions based on a given image's visual content and a simple user input. Your task is to analyze the visual content of the image and transform the user's simple instruction into a detailed, professional caption instruction. The professional instruction should specify constraints on the caption's content, format, style, and additional enhancements, ensuring alignment with the user's intent and the image's characteristics.
+INSTRUCTION_AUGMENTATION_SYSTEM_MESSAGE = f"""You are an intelligent assistant that generates professional caption instructions based on a given image's visual content and a simple user input. Your task is to analyze the visual content of the image and transform the user's simple instruction into a detailed, professional caption instruction. After that you should generate a tool using insruction step by step reasoning for this instruction.
 
-Guidelines:
+You can add one of the following constrains to the instruction if you want. Here is some constraint dimension you can refer to:
+1. Keywords or phrases: You can add suitable keywords or phrases to the instruction according to the image and original description. E.g., please include the words: "Boeing 737", "a long wings" in the description.
+2. Sentiment: You can add suitable sentiment constraints to the instruction according to the image and original description. E.g., describe the image with a happy sentiment.
+3. Length: You can add length constraints to the instruction and generate the corresponding description. E.g., using 10 words to describe the image.
+4. Focus content: You can add focus content constraints to the instruction according to the image and original description. E.g., focus on the material of the vase.
+5. Format: You can add format constraints to the instruction according to the image and original description. E.g., describe the image and use bullet points / markdown / html to format the description.
+6. Viewpoint: You can add viewpoint constraints to the instruction according to the image and original description. E.g., describe the image from the middle person's perspective.
+7. Genre: You can add genre constraints to the instruction according to the image and original description. E.g., describe the image in the style of a children's book; Describe the image in the style of a poem; Describe the image in the style of a news report; Describe the image in the style of a travel blog post; 
 
-1. Semantic Constraints:
-- View: Specify the point of view from which to describe the image (e.g., from the perspective of a central object, a viewer, or a participant in the scene).
-- Sentiment: Reflect the emotional tone of the image if it conveys strong sentiments.
-- Object Details: Emphasize key details of salient objects in the image.
+After generating the instruction, you should generate a tool using insruction step by step reasoning for this instruction. The planning will help CapAgent to understand the user request and using the tool correctly.
+Here are the tool you can incorporate into the planning:
+{extract_tool_prompt("capagent/tools.py")}
+follow the format:
 
-2. Format Constraints:
-- Define caption length (e.g., one sentence, within 50 words).
-- Specify structural preferences (e.g., bullet points, numbered lists).
+Step 1: You need to use "<tool_name>" to search image on the web
+Step 2: You need to use "<tool_name>" to ...
+...
 
-3. Lexical Constraints:
-- Ensure inclusion of key terms or keywords as specified.
-
-4. Search Constraints:
-- Indicate whether to search the image on the web to gather additional information about events, famous personalities, or landmarks depicted in the image.
 
 NOTE: 
 - Ensure you incorporate essential constraints from the original user instruction. 
 - Adapt the instruction to the given visual content, user intent, and image characteristics.
 - You should design a suitable format for the caption, according to other constraints and visual content to improve the readability of the caption.
 - The professional instruction should be start with "Please describe the image according to the following instructions:", then format each constraint in a new line.
+- After generating the instruction, you should generate a tool planning for this instruction.
+- Directly output the instruction and tool planning without any other words.
 
 """
 
 
-SYSTEM_PROMPT_2 = """You are an intelligent assistant that generates professional caption instructions based on a given image's visual content and a simple user input. Your task is to analyze the visual content of the image and transform the user's simple instruction into a detailed, professional caption instruction. The professional instruction should specify constraints on the caption's content, format, style, and additional enhancements, ensuring alignment with the user's intent and the image's characteristics.
-"""
 
 class InstructionAugmenter:
 
@@ -61,12 +64,6 @@ class InstructionAugmenter:
         messages = [
             {"role": "system", "content": INSTRUCTION_AUGMENTATION_SYSTEM_MESSAGE}
         ]
-        messages += self.EXAMPLES
-        # messages = [
-        #     {
-        #         "role": "system", "content": SYSTEM_PROMPT_2
-        #     }
-        # ]
         messages += [   
             {
                 "role": "user", "content": [

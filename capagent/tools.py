@@ -10,12 +10,15 @@ from pprint import pprint
 
 
 try:
-    detection_client = Client("http://127.0.0.1:8081")
+    detection_client = Client("http://127.0.0.1:8080")
+    print("Detection client is listening on port 8080.")
 except Exception as e:
     print("Detection client is not working properly. Tools related to detection will not work.")
     detection_client = None
+
 try:
-    depth_client = Client("http://127.0.0.1:8082")
+    depth_client = Client("http://127.0.0.1:8081")
+    print("Depth client is listening on port 8081.")
 except Exception as e:
     print("Depth client is not working properly. Tools related to depth will not work.")
     depth_client = None
@@ -88,12 +91,11 @@ def count_words(caption: str, show_result: bool = True) -> int:
     return len(word_tokenize(caption))
 
 
-def shorten_caption(request: str, caption: str, max_len: int, show_result: bool = True) -> str:
+def shorten_caption(caption: str, max_len: int, show_result: bool = True) -> str:
     """
     Shorten the caption within the max length while maintaining key information.
     
     Args:
-        request (str): The user init request for the caption.
         caption (str): The original caption text to be shortened
         max_len (int): Maximum number of words allowed in the shortened caption
         show_result (bool): Whether to print the result
@@ -102,19 +104,26 @@ def shorten_caption(request: str, caption: str, max_len: int, show_result: bool 
         str: A shortened version of the input caption that respects the word limit
     """
 
-    system_prompt = """You are helpful assistant. You are good at shortening the image caption according to user's request. Each time the user provides a caption and the max length, you can help to shorten the caption to the max length.
+    system_prompt = """You are helpful assistant. You are good at shortening the image caption. Each time the user provides a caption and the max length, you can help to shorten the caption to the max length.
 
     Note:
     - You should change the length of the caption by first delete unnecessary words or details not mentioned in the user request.
     - You should keep the original sentiment and descriptive perspective of the caption.
-
-    The user request: {request}
+    - You should keep the original meaning of the caption.
     """
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": f"Caption: {caption}. Max length: {max_len} words. Directly output the shortened caption without any other words."}
     ]
-    result  = llm_client.chat_completion(messages)
+    result = llm_client.chat_completion(messages)
+    w_count = count_words(result, show_result=False)
+
+    while w_count > max_len:
+        messages += [{"role": "assistant", "content": f"Caption: {result}"}]
+        messages += [{"role": "user", "content": f"The length of the caption ({w_count} words) is still longer than the max length ({max_len} words). Please shorten the caption to the max length."}]
+        result = llm_client.chat_completion(messages)
+        w_count = count_words(result, show_result=False)
+    
     if show_result:
         print(f"Shortened caption: {result}")
 
@@ -128,6 +137,9 @@ def change_caption_sentiment(caption: str, sentiment: str, show_result: bool = T
         caption (str): The original caption text to be transferred
         sentiment (str): The desired sentiment for the caption
         show_result (bool): Whether to print the result
+    
+    Returns:
+        str: The caption with the transferred sentiment
 
     This function will automatically print the result by setting show_result to True, with the transferred caption and the number of words in the caption.
     """
@@ -138,6 +150,7 @@ def change_caption_sentiment(caption: str, sentiment: str, show_result: bool = T
     if show_result:
         print(f"Transferred caption: {result}")
 
+    return result
 
 def extend_caption(image_data: ImageData, caption: str, iteration: int, show_result: bool = True) -> str:
     """
@@ -149,7 +162,10 @@ def extend_caption(image_data: ImageData, caption: str, iteration: int, show_res
         iteration (int): The number of iterations to ask and answer questions
         show_result (bool): Whether to print the result
     
+    Returns:
+        str: The extended caption
         
+    This function will automatically print the result by setting show_result to True, with the extended caption and the number of words in the caption.
     """
     user_input = {"role": "user", "content": f"Caption: {caption}."}
     llm_messages = [user_input]
@@ -174,6 +190,8 @@ def extend_caption(image_data: ImageData, caption: str, iteration: int, show_res
         print(f"Extended caption: {result}.")
         count_words(result, show_result=True)
 
+    return result
+
 
 def add_keywords_to_caption(caption: str, keywords: list[str], show_result: bool = True) -> str:
     """
@@ -183,6 +201,9 @@ def add_keywords_to_caption(caption: str, keywords: list[str], show_result: bool
         caption (str): The original caption of the image
         keywords (list[str]): The keywords to add to the caption
         show_result (bool): Whether to print the result
+
+    Returns:
+        str: The caption with the added keywords
             
     This function will automatically print the result by setting show_result to True, with the added keywords and the number of words in the caption.
     """
@@ -193,6 +214,8 @@ def add_keywords_to_caption(caption: str, keywords: list[str], show_result: bool
 
     if show_result:
         print(f"Recaptioned caption: {result}")
+
+    return result
 
 def google_search(query: str, show_result: bool = True, top_k: int = 5) -> str:
     """
@@ -226,10 +249,10 @@ def google_search(query: str, show_result: bool = True, top_k: int = 5) -> str:
     print(f"Google Search Result of {query}:")
     for i, result in enumerate(organic_results[:top_k]):
         print("-" * 10 + f"Result {i}" + "-" * 10)
-        print(f"Title: {result['title']}")
-        print(f"Snippet: {result['snippet']}")
-        print(f"Snippet highlighted words: {result['snippet_highlighted_words']}")
-        print(f"Source: {result['source']}\n")
+        print(f"Title: {result.get('title', 'N/A')}")
+        print(f"Snippet: {result.get('snippet', 'N/A')}")
+        print(f"Snippet highlighted words: {result.get('snippet_highlighted_words', 'N/A')}")
+        print(f"Source: {result.get('source', 'N/A')}\n")
 
 
 
@@ -260,16 +283,14 @@ def google_lens_search(image_data: ImageData, show_result: bool = True, top_k: i
         visual_matches = results["visual_matches"]
 
         titles = [v_match["title"] for v_match in visual_matches[:top_k]]
-        print("Google Lens Image Search Result:")
-        for i, title in enumerate(titles):
-            print("-" * 10 + f"Result {i}" + "-" * 10)
-            print(f"Title: {title}")
+        if show_result:
+            print("Google Lens Image Search Result:")
+            for i, title in enumerate(titles):
+                print("-" * 10 + f"Result {i}" + "-" * 10)
+                print(f"Title: {title}")
 
     except Exception as e:
-        search_result = "This tool is experiencing problems and is not working properly"
-
-    if show_result:
-        print(f"Search result: {search_result}")
+        print("This tool is experiencing problems and is not working properly")
 
 
 def spatial_relation_of_objects(image_data: ImageData, show_result: bool = True, objects: list[str] = None) -> str:
@@ -301,7 +322,7 @@ def depth_relation_of_objects(image_data: ImageData, show_result: bool = True, o
 
     assert objects is not None, "Objects are not specified."
     objects_caption = ", ".join(objects)
-    result_image_file, result_json = detection_client.predict(file(image_data.local_path), objects_caption, 0.3, 0.3)
+    _, result_json = detection_client.predict(file(image_data.local_path), objects_caption, 0.3, 0.3)
     
     # gain depth map of the image
 
@@ -335,7 +356,7 @@ def crop_object_region(image_data: ImageData, object: str) -> str:
         PIL.Image.Image: The cropped object region image
     """ 
 
-    result_image_file, result_json = detection_client.predict(file(image_data.local_path), object, 0.3, 0.3)  
+    _, result_json = detection_client.predict(file(image_data.local_path), object, 0.3, 0.3)  
 
     result_image = image_data.image.crop(result_json[object])
     

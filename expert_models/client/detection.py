@@ -98,44 +98,12 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action="store_true", help="using debug mode")
     parser.add_argument("--share", action="store_true", help="share the app")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="host")
-    parser.add_argument("--port", type=int, default=8081, help="port")
+    parser.add_argument("--port", type=int, default=8080, help="port")
     parser.add_argument("--config", type=str, default="/mnt/sdc/huggingface/model_hub/GroundingDINO/GroundingDINO_SwinT_OGC.cfg.py", help="config file")
     parser.add_argument("--ckpt", type=str, default="/mnt/sdc/huggingface/model_hub/GroundingDINO/groundingdino_swint_ogc.pth", help="checkpoint file")
     args = parser.parse_args()
 
     model = load_model_hf(args.config, args.ckpt)
-
-    # block = gr.Blocks().queue()
-    # with block:
-    #     gr.Markdown("# [Grounding DINO](https://github.com/IDEA-Research/GroundingDINO)")
-    #     gr.Markdown("### Open-World Detection with Grounding DINO")
-
-    #     with gr.Row():
-    #         with gr.Column():
-    #             input_image = gr.Image(source='upload', type="pil")
-    #             grounding_caption = gr.Textbox(label="Detection Prompt")
-    #             run_button = gr.Button(label="Run")
-    #             with gr.Accordion("Advanced options", open=False):
-    #                 box_threshold = gr.Slider(
-    #                     label="Box Threshold", minimum=0.0, maximum=1.0, value=0.25, step=0.001
-    #                 )
-    #                 text_threshold = gr.Slider(
-    #                     label="Text Threshold", minimum=0.0, maximum=1.0, value=0.25, step=0.001
-    #                 )
-
-    #         with gr.Column():
-    #             gallery = gr.outputs.Image(
-    #                 type="pil",
-    #                 # label="grounding results"
-    #             ).style(full_width=True, full_height=True)
-    #             # gallery = gr.Gallery(label="Generated images", show_label=False).style(
-    #             #         grid=[1], height="auto", container=True, full_width=True, full_height=True)
-
-    #     run_button.click(fn=run_grounding, inputs=[
-    #                     input_image, grounding_caption, box_threshold, text_threshold], outputs=[gallery])
-
-
-    # block.launch(server_name='0.0.0.0', server_port=7579, debug=args.debug, share=args.share)
 
     demo = gr.Interface(fn=detection, 
                         inputs=[
@@ -147,5 +115,5 @@ if __name__ == "__main__":
                         outputs=[gr.Image(type="pil"), "json"]
                     )
     
-    demo.launch(share=False, server_name="localhost", server_port=args.port, show_error=True)
+    demo.launch(share=False, server_name=args.host, server_port=args.port, show_error=True)
 

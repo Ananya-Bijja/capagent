@@ -1,7 +1,9 @@
 from capagent.chat_models.client import mllm_client
 from capagent.utils import encode_pil_to_base64
 from capagent.tool_prompt import extract_tool_prompt
+from capagent.tools import google_search, google_lens_search, ImageData
 from PIL import Image
+
 
 
 INSTRUCTION_AUGMENTATION_SYSTEM_MESSAGE = f"""You are an intelligent assistant that generates professional caption instructions based on a given image's visual content and a simple user input. Your task is to analyze the visual content of the image and transform the user's simple instruction into a detailed, professional caption instruction. After that you should generate a tool using insruction step by step reasoning for this instruction.
@@ -36,6 +38,11 @@ NOTE:
 """
 
 
+SEARCH_ASSISTANT_SYSTEM_MESSAGE = f"""You are an intelligent assistant that can search on the web. 
+The user will provide you an image and image search result on the web.
+You need to generate a keywords list for further search on the web. Such information will be used to generate a more accurate instruction to guide the image captioning.
+"""
+
 
 class InstructionAugmenter:
 
@@ -59,31 +66,81 @@ class InstructionAugmenter:
     ]
 
 
-    def generate_complex_instruction(self, image, query: str, timeout=20):
-        
+    def generate_complex_instruction(self, image, query: str, is_search: bool, timeout=20):
+
+        # TODO: add search information to the instruction
+
         messages = [
             {"role": "system", "content": INSTRUCTION_AUGMENTATION_SYSTEM_MESSAGE}
         ]
-        messages += [   
-            {
-                "role": "user", "content": [
-                    {
-                        "type": "image_url",
-                        'image_url': {
-                            'url': f"data:image/jpeg;base64,{encode_pil_to_base64(image)}"
+
+        if is_search:
+
+            search_messages = [
+                {"role": "system", "content": SEARCH_ASSISTANT_SYSTEM_MESSAGE}
+            ]
+            image.save(".tmp/search_image.png")
+            image_data = ImageData(image, image_url=f"http://367469ar22lb.vicp.fun/.tmp/search_image.png", local_path=f".tmp/search_image.png")
+            
+            image_search_result = google_lens_search(image_data)
+
+            search_messages += [
+                {
+                    "role": "user", "content": [
+                        {
+                            "type": "image_url",
+                            'image_url': {
+                                'url': f"data:image/jpeg;base64,{encode_pil_to_base64(image)}"
+                            }
+                        },
+                        {
+                            'type': 'text', 
+                            'text': f"Here is the image search result:\n{image_search_result}, now please output the no more than 5 keywords or phrases need to be further on google search. Directly output the keywords or phrases without any other words, each keyword or phrase separate by comma."
+                        },
+                    ]
+                }
+            ]
+
+            search_keywords = mllm_client.chat_completion(search_messages, timeout=timeout)
+            print(f"search_keywords: {search_keywords}")
+            keywords_search_result = []
+            for keyword in search_keywords.split(","):
+                keywords_search_result.append(google_search(keyword))
+            keywords_search_result = "\n".join(keywords_search_result)
+
+            
+            messages += [
+                {
+                    "role": "user", "content": [
+                        {
+                            "type": "text", "text": f"Here is the similar image title search result returned by google lens: {image_search_result}\n\nHere is the search result for the keywords in the similar image titles:\n{keywords_search_result}.\n\nNow please generate a professional instruction based on user instruction and the search result. Directly output the instruction without any other words."
                         }
-                    },
-                    {
-                        'type': 'text', 
-                        'text': f"User instruction: {query}. \nPlease generate a professional instruction based on user instruction. Directly output the instruction without any other words."
-                    }
-                ]
-            }
-        ]
+                    ]
+                }
+            ]
+
+        else:
+        
+            messages += [   
+                {
+                    "role": "user", "content": [
+                        {
+                            "type": "image_url",
+                            'image_url': {
+                                'url': f"data:image/jpeg;base64,{encode_pil_to_base64(image)}"
+                            }
+                        },
+                        {
+                            'type': 'text', 
+                            'text': f"User instruction: {query}. \nPlease generate a professional instruction based on user instruction. Directly output the instruction without any other words."
+                        }
+                    ]
+                }
+            ]
 
         return mllm_client.chat_completion(messages, timeout=timeout)
 
 
 if __name__ == "__main__":
     ia = InstructionAugmenter()
-    print(ia.generate_complex_instruction(Image.open("data/cia_examples/0.png").convert("RGB"), "Please describe the image."))
+    print(ia.generate_complex_instruction(Image.open("assets/figs/cybercab.png").convert("RGB"), "Please describe the image.", is_search=True))

@@ -225,7 +225,10 @@ def google_search(query: str, show_result: bool = True, top_k: int = 5) -> str:
         query (str): The query to search
         show_result (bool): Whether to print the result
         top_k (int): The number of results to show
-    
+
+    Returns:
+        str: The search result
+
     This function will automatically print the search result by setting show_result to True, with the title, snippet, snippet highlighted words, source, and the link of the result.
     """
 
@@ -244,15 +247,20 @@ def google_search(query: str, show_result: bool = True, top_k: int = 5) -> str:
     organic_results = results.get("organic_results", None)
     
     if results is None and show_result:
-        print("No results found")
+        search_result = "No results found"
+    else:
+        search_result = f"Google Search Result of {query}:"
+        for i, result in enumerate(organic_results[:top_k]):
+            search_result += "\n" + "-" * 10 + f"Result {i + 1}" + "-" * 10
+            search_result += f"\nTitle: {result.get('title', 'N/A')}"
+            search_result += f"\nSnippet: {result.get('snippet', 'N/A')}"
+            search_result += f"\nSnippet highlighted words: {result.get('snippet_highlighted_words', 'N/A')}"
+            search_result += f"\nSource: {result.get('source', 'N/A')}\n"
 
-    print(f"Google Search Result of {query}:")
-    for i, result in enumerate(organic_results[:top_k]):
-        print("-" * 10 + f"Result {i}" + "-" * 10)
-        print(f"Title: {result.get('title', 'N/A')}")
-        print(f"Snippet: {result.get('snippet', 'N/A')}")
-        print(f"Snippet highlighted words: {result.get('snippet_highlighted_words', 'N/A')}")
-        print(f"Source: {result.get('source', 'N/A')}\n")
+    if show_result:
+        print(search_result)
+
+    return search_result
 
 
 
@@ -264,6 +272,9 @@ def google_lens_search(image_data: ImageData, show_result: bool = True, top_k: i
         image_data (ImageData): The image data to search the similar images on Google Lens
         show_result (bool): Whether to print the result
         top_k (int): The number of results to show
+
+    Returns:
+        str: The search result
 
     This function will automatically print the search result by setting show_result to True, with the title of each similar image.
     """
@@ -283,14 +294,19 @@ def google_lens_search(image_data: ImageData, show_result: bool = True, top_k: i
         visual_matches = results["visual_matches"]
 
         titles = [v_match["title"] for v_match in visual_matches[:top_k]]
-        if show_result:
-            print("Google Lens Image Search Result:")
-            for i, title in enumerate(titles):
-                print("-" * 10 + f"Result {i}" + "-" * 10)
-                print(f"Title: {title}")
+        search_result = "Google Lens Image Search Result:"
+
+        for i, title in enumerate(titles):
+            search_result += "\n" + "-" * 10 + f"Result {i + 1}" + "-" * 10
+            search_result += f"\nTitle: {title}"
 
     except Exception as e:
-        print("This tool is experiencing problems and is not working properly")
+        search_result = "This tool is experiencing problems and is not working properly"
+
+    if show_result:
+        print(search_result)
+
+    return search_result
 
 
 def spatial_relation_of_objects(image_data: ImageData, show_result: bool = True, objects: list[str] = None) -> str:

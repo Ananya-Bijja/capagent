@@ -64,17 +64,27 @@ To let local image online for allowing api, e.g., google search, using url acces
 ```bash
 python launch_image_server.py
 ```
+After launching the image server, you need to do intranet penetration to let the api can access the image.
 
 ## Run CapAgent
-Run on a single image
+### Inference on a single image
 ```bash
 python run.py
 ```
 
-Run on gradio demo
+### Gradio Demo
 ```bash
 python gradio_demo.py
 ``` 
+
+**Generate a professional instruction**
+
+You can input a simple instruction and generate a professional instruction for image captioning. 
+
+**Use Google Search and Google Lens**
+
+If you want to use the search function, please turn on the "Use Google Search and Google Lens" toggle. This can help you generate a more accurate instruction for image captioning. Which allow the image caption contain more accurate information.
+
 <div align="center">
 <img src="assets/readme/gradio_demo.png"/>
 </div>

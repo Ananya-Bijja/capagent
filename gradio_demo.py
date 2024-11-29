@@ -3,9 +3,12 @@ import gradio as gr
 import tempfile
 import os
 
+from gradio_toggle import Toggle
 from capagent.instruction_augmenter import InstructionAugmenter
 from capagent.tools import count_words
 from run import run_agent
+
+
 
 instruction_augmenter = InstructionAugmenter()
 
@@ -67,9 +70,9 @@ Search Constraints: This seems to be a special moment in history, please search 
 
 
 
-def generate_complex_instruction(query: str, image: PIL.Image.Image):
+def generate_complex_instruction(query: str, image: PIL.Image.Image, is_search: bool):
     try:
-        return instruction_augmenter.generate_complex_instruction(image, query, timeout=20)
+        return instruction_augmenter.generate_complex_instruction(image, query, is_search=is_search, timeout=20)
     except Exception as e:
         return f"Timeout. Please try again."
 
@@ -110,10 +113,18 @@ def launch_gradio_demo():
             
             with gr.Column():
                 image_input = gr.Image(height=256, image_mode="RGB", type="pil", label="Image")
-                query_input = gr.Textbox(label="User Query", placeholder="e.g., 'Captioning an image with more accurate event information'", lines=2, submit_btn="Send")
+                query_input = gr.Textbox(label="User Instruction", placeholder="e.g., 'Captioning an image with more accurate event information'", lines=2, submit_btn="Send")
+                
                 with gr.Blocks():
                     pro_instruction_input = gr.Textbox(label="Professional Instruction", submit_btn="Send")
-                    
+
+                web_search_toggle = Toggle(
+                    label="Use Google Search and Google Lens",
+                    value=False,
+                    color="green",
+                    interactive=True,
+                )
+            
                 with gr.Row():
                     complex_button = gr.Button("Generate Professional Instruction")
                     clear_button = gr.Button("Clear")
@@ -129,7 +140,7 @@ def launch_gradio_demo():
 
         complex_button.click(
             generate_complex_instruction, 
-            inputs=[query_input, image_input], 
+            inputs=[query_input, image_input, web_search_toggle], 
             outputs=pro_instruction_input
         )
 

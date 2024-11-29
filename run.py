@@ -1,6 +1,5 @@
 import re
 import os
-from PIL import Image
 from autogen.agentchat import ConversableAgent
 
 from capagent.agent import (
@@ -75,6 +74,7 @@ def run_agent(user_query: str, working_dir: str, image_paths: list[str] = None):
         is_termination_msg = lambda x: False,
         system_message=ASSISTANT_SYSTEM_MESSAGE,
     )
+
     
     chat_result, messages = user_proxy.initiate_chat(
         assistant, 

@@ -15,14 +15,7 @@ instruction_augmenter = InstructionAugmenter()
 EXAMPLES = [
     # example 1
     [
-"""Create a detailed description of the image, focusing on the central figure seated on an ornate throne, wearing an elaborate crown and regal robes. Highlight the presence of clergy in ceremonial attire standing nearby, emphasizing their roles in the event. Note the richly decorated surroundings, including the vibrant colors and intricate patterns. Mention the distinguished guests in formal attire seated in the background, adding context to the ceremonial setting. The description should be informative and concise, around 100 words, with a formal and respectful tone.
-
-Constraints:
-Semantic Constraints: Convey a sense of grandeur and tradition.
-Format Constraints: Provide a single, structured paragraph. Aim for around 100 words.
-Content Constraints: Focus on the central figure, clergy, and ceremonial elements.
-Avoid unrelated or speculative details.
-Search Constraints: This seems to be a special moment in history, please search it on the web.""",
+        "Create a detailed description of the image, focusing on the central figure seated on an ornate throne.",
         "assets/figs/charles_on_the_throne.png"
     ],
     # example 2
@@ -103,11 +96,12 @@ def launch_gradio_demo():
     # Create the Gradio interface
 
     with gr.Blocks() as demo:
-        gr.Markdown("# CapAgent")
-        gr.Markdown("CapAgent is a tool-using agent for image captioning. It supports region captioning, captioning with sentiment, lengthening or shortening the caption, and captioning with more informative web entities. ")
+        gr.Markdown("# CapAgent <img src='/file=assets/readme/pencil.png' width='25'/> ")
+        gr.Markdown("CapAgent is a tool-using agent for image captioning. It supports region captioning, captioning with sentiment, lengthening or shortening the caption, and captioning with more informative web entities.")
         gr.Markdown("## Usage")
-        gr.Markdown("1. Enter your query and upload image to interact with the CapAgent.")
-        gr.Markdown("2. The agent will generate a caption for the image based on your query.")
+        gr.Markdown("1. Enter your simple instruction and upload image to interact with the CapAgent.")
+        gr.Markdown("2. Click the button 'Generate Professional Instruction' to generate a professional instruction based on your instruction.")
+        gr.Markdown("3. Click the button 'Send' to generate a caption for the image based on your professional instruction.")
 
         with gr.Row():
             

@@ -1,7 +1,7 @@
 import os
 import PIL
 
-from nltk.tokenize import word_tokenize
+from nltk.tokenize import word_tokenize, sent_tokenize
 from serpapi import GoogleSearch
 from capagent.chat_models.client import llm_client, mllm_client
 from capagent.utils import encode_pil_to_base64
@@ -91,6 +91,24 @@ def count_words(caption: str, show_result: bool = True) -> int:
     return len(word_tokenize(caption))
 
 
+def count_sentences(caption: str, show_result: bool = True) -> int:
+    """
+    Count the number of sentences in the input string.
+
+    Args:
+        caption (str): The input string to count the sentences
+        show_result (bool): Whether to print the result
+        
+    Returns:
+        int: The number of sentences in the input string
+    """
+    sentences = sent_tokenize(caption)
+    if show_result:
+        print(f"The number of sentences in the caption is: {len(sentences)}.")
+
+    return len(sentences)
+
+
 def shorten_caption(caption: str, max_len: int, show_result: bool = True) -> str:
     """
     Shorten the caption within the max length while maintaining key information.
@@ -107,7 +125,7 @@ def shorten_caption(caption: str, max_len: int, show_result: bool = True) -> str
     system_prompt = """You are helpful assistant. You are good at shortening the image caption. Each time the user provides a caption and the max length, you can help to shorten the caption to the max length.
 
     Note:
-    - You should change the length of the caption by first delete unnecessary words or details not mentioned in the user request.
+    - You can change the length of the caption by first delete unnecessary words.
     - You should keep the original sentiment and descriptive perspective of the caption.
     - You should keep the original meaning of the caption.
     """
@@ -167,11 +185,13 @@ def extend_caption(image_data: ImageData, caption: str, iteration: int, show_res
         
     This function will automatically print the result by setting show_result to True, with the extended caption and the number of words in the caption.
     """
-    user_input = {"role": "user", "content": f"Caption: {caption}."}
-    llm_messages = [user_input]
+    system_prompt = "You are a helpful assistant that can help users to extend the caption to include more details. You can ask one or more questions about the image to the user. The user will answer each question. After you get all the answers, you can add more information to the caption according to the answers."
+    
+    user_input = {"role": "user", "content": f"Caption: {caption}. Please generate a question to extend the caption."}
+    llm_messages = [{"role": "system", "content": system_prompt}, user_input]
     
     for _ in range(iteration):
-        question = llm_client.chat_completion(messages)
+        question = llm_client.chat_completion(llm_messages)
         mllm_message = {"role": "user", "content": [
             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encode_pil_to_base64(image_data.image)}"}},
             {"type": "text", "text": question}
@@ -183,8 +203,8 @@ def extend_caption(image_data: ImageData, caption: str, iteration: int, show_res
             {"role": "user", "content": f"Answer: {answer}. Please generate a new question."}
         ]
     
-    messages += [{"role": "user", "content": f"Please extend the caption according to the questions and answers. Caption: {caption}. Directly output the extended caption without any other words."}]
-    result = llm_client.chat_completion(messages)
+    llm_messages += [{"role": "user", "content": f"Please extend the caption according to the questions and answers. Caption: {caption}. Directly output the extended caption without any other words."}]
+    result = llm_client.chat_completion(llm_messages)
     
     if show_result:
         print(f"Extended caption: {result}.")
@@ -374,6 +394,6 @@ def crop_object_region(image_data: ImageData, object: str) -> str:
 
     _, result_json = detection_client.predict(file(image_data.local_path), object, 0.3, 0.3)  
 
-    result_image = image_data.image.crop(result_json[object])
-    
-    return result_image
+    crop_image_data = ImageData(image=image_data.image.crop(result_json[object]), image_url=None, local_path=None)
+
+    return crop_image_data

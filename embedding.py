@@ -19,12 +19,14 @@ def build_vector_store(documents_dir: str, collection_name: str):
     vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-    embed_model = HuggingFaceEmbedding(model_name="/mnt/sdc/huggingface/model_hub/bge-m3")
-
+    embed_model = HuggingFaceEmbedding(model_name="/mnt/sdc/huggingface/model_hub/bge-m3", max_length=8192)
+    
     # create your index
     index = VectorStoreIndex.from_documents(
         documents, storage_context=storage_context, embed_model=embed_model, show_progress=True
     )
+
+    # from IPython import embed; embed()
 
     return index
 

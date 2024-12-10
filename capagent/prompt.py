@@ -59,23 +59,3 @@ Below are some examples of how to use the tools to solve the user requests. You 
             prompt = f"OBSERVATION: Execution success. The output is as follows:\n{output}\n"
             prompt += "Please generate the next THOUGHT and ACTION. If you can get the answer, please also reply with ANSWER: <your answer> and ends with TERMINATE."
             return prompt
-
-
-transfer_caption_sentiment_system_prompt = """You are a helpful AI assistant. Give you an image caption, your task is to transfer the caption to the specified sentiment.
-"""
-
-transfer_caption_sentiment_examples = [
-    {"role": "system", "content": transfer_caption_sentiment_system_prompt},
-    {"role": "user", "content": "Please transfer the caption to positive sentiment. Caption: A horse with white mane and tail is running in the field."},
-    {"role": "assistant", "content": "The majestic horse boasts a stunning white mane and tail as it gallops across the field."}
-]
-
-asking_a_question_to_detail_caption_system_prompt = """You are a helpful AI assistant. Give you an image caption, your task is to ask a question to detail the caption.
-"""
-
-asking_a_question_to_detail_caption_examples = [
-    {"role": "system", "content": asking_a_question_to_detail_caption_system_prompt},
-    {"role": "user", "content": "Caption: A beautiful girl is playing with a cat."},
-    {"role": "assistant", "content": "What is the girl wearing?"}
-]
-

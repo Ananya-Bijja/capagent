@@ -18,9 +18,10 @@ def test_single_image_visual_question_answering():
     print(result)
     print("The number of words in the caption is:", count)
 
-def test_detail_caption():
-    image = PIL.Image.open("assets/cat.png").convert("RGB")
-    result = extend_caption(image, "The image shows a close-up of an orange tabby cat.", 3)
+def test_extend_caption():
+    image = PIL.Image.open("assets/figs/cat.png").convert("RGB")
+    image_data = ImageData(image=image, image_url=None, local_path="assets/figs/cat.png")
+    result = extend_caption(image_data, "The image shows a close-up of an orange tabby cat.", 3)
     print(result)
     count = count_words(result)
     print("The number of words in the detailed caption is:", count)
@@ -29,6 +30,24 @@ def test_search_image_on_web():
     image = ImageData(image=None, image_url="http://367469ar22lb.vicp.fun/.tmp/image_1.png")
     result = google_lens_search(image)
     print(result)
+
+
+def test_object_cropping():
+    image = PIL.Image.open("assets/figs/cybercab.png").convert("RGB")
+    image_data = ImageData(image=image, image_url=None, local_path="assets/figs/cybercab.png")
+    crop_object_region(image_data, "car")
+
+
+def test_spatial_relationship():
+    image = PIL.Image.open("assets/figs/living_room.png").convert("RGB")
+    image_data = ImageData(image=image, image_url=None, local_path="assets/figs/living_room.png")
+    result = spatial_relation_of_objects(image_data, objects=["sofa", "chair", "table", "lamp"])
+    print(result)
+
+def test_counting_object():
+    image = PIL.Image.open("assets/figs/living_room.png").convert("RGB")
+    image_data = ImageData(image=image, image_url=None, local_path="assets/figs/living_room.png")
+    result = counting_object(image_data, object="lamp", show_result=True)
 
 
 def test_instruction_augmenter():
@@ -45,10 +64,11 @@ if __name__ == "__main__":
     # test_count_words()
     # test_shorten_caption()
     # test_coarse_caption()
-    # test_single_image_visual_question_answering()
-    # test_detail_caption()
-    
+    # test_visual_question_answering()
+    test_extend_caption()
     # test_instruction_augmenter()
-    test_search_image_on_web()
-    test_google_search()
+    # test_search_image_on_web()
+    # test_google_search()
+    # test_spatial_relationship()
+    # test_counting_object()
 

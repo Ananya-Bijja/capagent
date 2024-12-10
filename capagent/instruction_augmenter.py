@@ -13,7 +13,7 @@ You can add one of the following constrains to the instruction if you want. Here
 2. Sentiment: You can add suitable sentiment constraints to the instruction according to the image and original description. E.g., describe the image with a happy sentiment.
 3. Length: You can add length constraints to the instruction and generate the corresponding description. E.g., using 10 words to describe the image.
 4. Focus content: You can add focus content constraints to the instruction according to the image and original description. E.g., focus on the material of the vase.
-5. Format: You can add format constraints to the instruction according to the image and original description. E.g., describe the image and use bullet points / markdown / html to format the description.
+5. Format: You can add format constraints to the instruction according to the image and original description. E.g., describe the image and use single paragraph / bullet points / markdown / html to format the description.
 6. Viewpoint: You can add viewpoint constraints to the instruction according to the image and original description. E.g., describe the image from the middle person's perspective.
 7. Genre: You can add genre constraints to the instruction according to the image and original description. E.g., describe the image in the style of a children's book; Describe the image in the style of a poem; Describe the image in the style of a news report; Describe the image in the style of a travel blog post; 
 
@@ -45,7 +45,7 @@ You can add one of the following constrains to the instruction if you want. Here
 2. Sentiment: You can add suitable sentiment constraints to the instruction according to the image and original description. E.g., describe the image with a happy sentiment.
 3. Length: You can add length constraints to the instruction and generate the corresponding description. E.g., using 10 words to describe the image.
 4. Focus content: You can add focus content constraints to the instruction according to the image and original description. E.g., focus on the material of the vase.
-5. Format: You can add format constraints to the instruction according to the image and original description. E.g., describe the image and use bullet points / markdown / html to format the description.
+5. Format: You can add format constraints to the instruction according to the image and original description. E.g., describe the image and use single paragraph / bullet points / markdown / html to format the description.
 6. Viewpoint: You can add viewpoint constraints to the instruction according to the image and original description. E.g., describe the image from the middle person's perspective.
 7. Genre: You can add genre constraints to the instruction according to the image and original description. E.g., describe the image in the style of a children's book; Describe the image in the style of a poem; Describe the image in the style of a news report; Describe the image in the style of a travel blog post; 
 ...
@@ -118,7 +118,7 @@ class InstructionAugmenter:
                         },
                         {
                             'type': 'text', 
-                            'text': f"Here is the image search result:\n{image_search_result}, now please output the no more than 5 keywords or phrases need to be further on google search. Directly output the keywords or phrases without any other words, each keyword or phrase separate by comma."
+                            'text': f"Here is the image search result:\n{image_search_result}, now please output the no more than 5 most informative keywords or phrases (e.g, event, location, person, etc.) need to be further on google search. Directly output the keywords or phrases without any other words, each keyword or phrase separate by comma."
                         },
                     ]
                 }

@@ -32,7 +32,7 @@ EXAMPLES = [
 
     # example 4
     [
-        "Captioning this image with a sad tone.", 
+        "Captioning this image with a sad tone and no more than three sentences.", 
         "assets/figs/sad_person.png"
     ],
 
@@ -58,6 +58,12 @@ EXAMPLES = [
     [
         "Please describe this image.", 
         "assets/figs/venom.png"
+    ],
+
+    # example 9
+    [
+        "Please describe the spatial relationship in this image.", 
+        "assets/figs/living_room.png"
     ]
 ]
 
@@ -96,13 +102,12 @@ def launch_gradio_demo():
     # Create the Gradio interface
 
     with gr.Blocks() as demo:
-        gr.Markdown("# CapAgent <img src='/file=assets/readme/pencil.png' width='25'/> ")
-        gr.Markdown("CapAgent is a tool-using agent for image captioning. It supports region captioning, captioning with sentiment, lengthening or shortening the caption, and captioning with more informative web entities.")
+        gr.Markdown("<h1><a href='https://github.com/xin-ran-w/CapAgent'>CapAgent</a></h1>")
+        gr.Markdown("CapAgent is a tool-using agent for image captioning. It can generate professional instructions for image captioning, and use tools to generate more accurate captions.")
         gr.Markdown("## Usage")
         gr.Markdown("1. Enter your simple instruction and upload image to interact with the CapAgent.")
         gr.Markdown("2. Click the button 'Generate Professional Instruction' to generate a professional instruction based on your instruction.")
         gr.Markdown("3. Click the button 'Send' to generate a caption for the image based on your professional instruction.")
-
         with gr.Row():
             
             with gr.Column():
@@ -132,6 +137,9 @@ def launch_gradio_demo():
                 output_textbox = gr.Textbox(label="Agent Response", lines=10)
                 cot_textbox = gr.Chatbot(label="Chain of Thought Messages", type='messages', min_height=600)
 
+        gr.Markdown("## Contact")
+        gr.Markdown("If you have any questions or suggestions, please contact me at <a href='mailto:wangxr@bupt.edu.cn'>wangxr@bupt.edu.cn</a>.")
+
         complex_button.click(
             generate_complex_instruction, 
             inputs=[query_input, image_input, web_search_toggle], 
@@ -157,8 +165,7 @@ def launch_gradio_demo():
             inputs=output_textbox, 
             outputs=output_textbox
         )
-        
-
+    
     
     # Launch the demo
     demo.launch(

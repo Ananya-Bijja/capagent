@@ -3,6 +3,8 @@ from autogen.coding import CodeBlock
 from autogen.coding.jupyter import JupyterCodeExecutor, LocalJupyterServer
 import ast, re
 
+from capagent.config import IMAGE_SERVER_DOMAIN_NAME
+
 # add the tools directory to the path
 parent_dir = os.path.dirname(os.path.abspath(__file__))
 if parent_dir not in sys.path:
@@ -38,7 +40,7 @@ class CodeExecutor:
         for idx, path in enumerate(image_paths):
             code += f"""image_{idx+1} = Image.open("{path}").convert("RGB")\n"""
             code += f"""image_{idx+1}.save(".tmp/image_{idx+1}.png")\n"""
-            code += f"""image_data_{idx+1} = ImageData(image_{idx+1}, image_url="http://367469ar22lb.vicp.fun/.tmp/image_{idx+1}.png", local_path=".tmp/image_{idx+1}.png")\n"""
+            code += f"""image_data_{idx+1} = ImageData(image_{idx+1}, image_url=f"{IMAGE_SERVER_DOMAIN_NAME}/.tmp/image_{idx+1}.png", local_path=".tmp/image_{idx+1}.png")\n"""
 
         return self.execute(code)
             

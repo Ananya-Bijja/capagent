@@ -1,8 +1,16 @@
 import os
-import PIL
+import copy
+import numpy as np
 
+from PIL import Image
 from nltk.tokenize import word_tokenize, sent_tokenize
 from serpapi import GoogleSearch
+
+from capagent.config import (
+    DETECTION_CLIENT_HOST, 
+    DEPTH_CLIENT_HOST, 
+    IMAGE_SERVER_DOMAIN_NAME
+)
 from capagent.chat_models.client import llm_client, mllm_client
 from capagent.utils import encode_pil_to_base64
 from gradio_client import Client, file
@@ -10,14 +18,14 @@ from pprint import pprint
 
 
 try:
-    detection_client = Client("http://127.0.0.1:8080")
+    detection_client = Client(DETECTION_CLIENT_HOST)
     print("Detection client is listening on port 8080.")
 except Exception as e:
     print("Detection client is not working properly. Tools related to detection will not work.")
     detection_client = None
 
 try:
-    depth_client = Client("http://127.0.0.1:8081")
+    depth_client = Client(DEPTH_CLIENT_HOST)
     print("Depth client is listening on port 8081.")
 except Exception as e:
     print("Depth client is not working properly. Tools related to depth will not work.")
@@ -29,15 +37,15 @@ class ImageData:
     A class to store the image and its URL for temporary use.
     """
 
-    def __init__(self, image: PIL.Image.Image, image_url: str, local_path: str):
+    def __init__(self, image: Image.Image, image_url: str, local_path: str):
         """
         Args:
             image (PIL.Image.Image): The image to store
             image_url (str): The image URL to store
         """
-        self.image = image
-        self.image_url = image_url
-        self.local_path = local_path
+        self.image: Image.Image = image
+        self.image_url: str = image_url
+        self.local_path: str = local_path
 
 
 
@@ -109,13 +117,14 @@ def count_sentences(caption: str, show_result: bool = True) -> int:
     return len(sentences)
 
 
-def shorten_caption(caption: str, max_len: int, show_result: bool = True) -> str:
+def shorten_caption(caption: str, max_words: int = None, max_sentences: int = None, show_result: bool = True) -> str:
     """
     Shorten the caption within the max length while maintaining key information.
     
     Args:
         caption (str): The original caption text to be shortened
-        max_len (int): Maximum number of words allowed in the shortened caption
+        max_words (int): Maximum number of words allowed in the shortened caption
+        max_sentences (int): Maximum number of sentences allowed in the shortened caption
         show_result (bool): Whether to print the result
     
     Returns:
@@ -129,18 +138,31 @@ def shorten_caption(caption: str, max_len: int, show_result: bool = True) -> str
     - You should keep the original sentiment and descriptive perspective of the caption.
     - You should keep the original meaning of the caption.
     """
+    assert max_words is not None or max_sentences is not None, "Either max_words or max_sentences should be provided."
+    
+    length_constrain = f"Max length: {max_words} words." if max_words is not None else f"Max length: {max_sentences} sentences."
+
     messages = [
         {"role": "system", "content": system_prompt},
-        {"role": "user", "content": f"Caption: {caption}. Max length: {max_len} words. Directly output the shortened caption without any other words."}
+        {"role": "user", "content": f"Caption: {caption}. {length_constrain}. Directly output the shortened caption without any other words."} 
     ]
     result = llm_client.chat_completion(messages)
-    w_count = count_words(result, show_result=False)
 
-    while w_count > max_len:
-        messages += [{"role": "assistant", "content": f"Caption: {result}"}]
-        messages += [{"role": "user", "content": f"The length of the caption ({w_count} words) is still longer than the max length ({max_len} words). Please shorten the caption to the max length."}]
-        result = llm_client.chat_completion(messages)
+    if max_words is not None:
         w_count = count_words(result, show_result=False)
+        while w_count > max_words:
+            messages += [{"role": "assistant", "content": f"Caption: {result}"}]
+            messages += [{"role": "user", "content": f"The length of the caption ({w_count} words) is still longer than the max length ({max_words} words). Please shorten the caption to the max length."}]
+            result = llm_client.chat_completion(messages)
+            w_count = count_words(result, show_result=False)
+    
+    elif max_sentences is not None:
+        s_count = count_sentences(result, show_result=False)
+        while s_count > max_sentences:
+            messages += [{"role": "assistant", "content": f"Caption: {result}"}]
+            messages += [{"role": "user", "content": f"The number of sentences in the caption ({s_count} sentences) is still longer than the max length ({max_sentences} sentences). Please shorten the caption to the max length."}]
+            result = llm_client.chat_completion(messages)
+            s_count = count_sentences(result, show_result=False)
     
     if show_result:
         print(f"Shortened caption: {result}")
@@ -192,11 +214,18 @@ def extend_caption(image_data: ImageData, caption: str, iteration: int, show_res
     
     for _ in range(iteration):
         question = llm_client.chat_completion(llm_messages)
-        mllm_message = {"role": "user", "content": [
-            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encode_pil_to_base64(image_data.image)}"}},
-            {"type": "text", "text": question}
-            
-        ]}
+        mllm_message = [{
+            "role": "user", 
+            "content": [
+                {
+                    'type': 'image_url', 
+                    'image_url': {
+                        'url': f"data:image/jpeg;base64,{encode_pil_to_base64(image_data.image)}"
+                    }
+                },
+                {'type': 'text', 'text': question}
+            ]
+        }]
         answer = mllm_client.chat_completion(mllm_message)
         llm_messages += [
             {"role": "assistant", "content": f"Question: {question}"}, 
@@ -209,6 +238,7 @@ def extend_caption(image_data: ImageData, caption: str, iteration: int, show_res
     if show_result:
         print(f"Extended caption: {result}.")
         count_words(result, show_result=True)
+        count_sentences(result, show_result=True)
 
     return result
 
@@ -329,57 +359,6 @@ def google_lens_search(image_data: ImageData, show_result: bool = True, top_k: i
     return search_result
 
 
-def spatial_relation_of_objects(image_data: ImageData, show_result: bool = True, objects: list[str] = None) -> str:
-    """
-    Call this function when you need to know the spatial relation of the objects in the image.
-    """
-    
-    assert objects is not None, "Objects are not specified."
-    objects_caption = ", ".join(objects)
-    result_image_file, result_json = detection_client.predict(file(image_data.image), objects_caption, 0.3, 0.3)
-    if show_result:
-        print(f"Bounding boxes of the objects:\n")
-        pprint(result_json)
-
-    llm_messages = [
-        {"role": "system", "content": "You are a helpful assistant that can help users to understand the spatial relation of the objects in the image."},
-        {"role": "user", "content": f"Bounding boxes of the objects: {result_json}. Please describe the spatial relation of the objects in the image."}
-    ]
-    result = llm_client.chat_completion(llm_messages)
-
-    if show_result:
-        print(f"Spatial relation of the objects: \n{result}")
-    
-
-def depth_relation_of_objects(image_data: ImageData, show_result: bool = True, objects: list[str] = None) -> str:
-    """
-    Call this function when you need to know the depth relation of the objects in the image.
-    """
-
-    assert objects is not None, "Objects are not specified."
-    objects_caption = ", ".join(objects)
-    _, result_json = detection_client.predict(file(image_data.local_path), objects_caption, 0.3, 0.3)
-    
-    # gain depth map of the image
-
-    _, grayscale_depth_map, _ = depth_client.predict(file(image_data.local_path), api_name="/on_submit")
-
-    # gain depth value of each object, according to the bounding box
-    object_depth_values = {
-        f"{obj}": grayscale_depth_map[result_json[obj]["y1"]:result_json[obj]["y2"], result_json[obj]["x1"]:result_json[obj]["x2"]].mean() 
-        for obj in result_json
-    }
-    
-    llm_messages = [
-        {"role": "system", "content": "You are a helpful assistant that can help users to understand the depth relation of the objects in the image."},
-        {"role": "user", "content": f"Bounding boxes of the objects: \n{result_json}. Depth values of the objects: \n{object_depth_values}. Please describe the depth relation of the objects in the image."}
-    ]
-    result = llm_client.chat_completion(llm_messages)
-
-    if show_result:
-        print(f"Depth relation of the objects:\n{result}")
-
-
 def crop_object_region(image_data: ImageData, object: str) -> str:
     """
     Call this function when you need to crop the object region in the image.
@@ -389,11 +368,109 @@ def crop_object_region(image_data: ImageData, object: str) -> str:
         object (str): The object to crop
     
     Returns:
-        PIL.Image.Image: The cropped object region image
+        ImageData: The image data contains the cropped object region image
     """ 
 
     _, result_json = detection_client.predict(file(image_data.local_path), object, 0.3, 0.3)  
+    bbox = result_json['bboxes'][0]  # cxcywh, relative position
+    width, height = image_data.image.size
+    
+    # turn to absolute position
+    bbox = [
+        int((bbox[0] - bbox[2] / 2) * width), 
+        int((bbox[1] - bbox[3] / 2) * height), 
+        int((bbox[0] + bbox[2] / 2) * width), 
+        int((bbox[1] + bbox[3] / 2) * height)
+    ]
 
-    crop_image_data = ImageData(image=image_data.image.crop(result_json[object]), image_url=None, local_path=None)
-
+    # crop the image
+    crop_image = copy.deepcopy(image_data.image).crop((bbox[0], bbox[1], bbox[2], bbox[3]))
+    crop_image.save("./.tmp/crop_image.png")
+    crop_image_data = ImageData(image=crop_image, image_url=f"{IMAGE_SERVER_DOMAIN_NAME}/.tmp/crop_image.png", local_path="./.tmp/crop_image.png")
+    
     return crop_image_data
+
+
+def counting_object(image_data: ImageData, object: str = None, show_result: bool = True):
+    """
+    Call this function when you need to count the number of the object in the image.
+
+    Args:
+        image_data (ImageData): The image data to count the object
+        object (str): The object to count
+        show_result (bool): Whether to print the result
+    
+    This function will automatically print the the number of the object by setting show_result to True.
+    """
+
+    _, result_json = detection_client.predict(file(image_data.local_path), object, 0.3, 0.3)
+    if show_result:
+        print(f'There are {len(result_json["phrases"])} {result_json["phrases"][0]} in the image.')
+
+def spatial_relation_of_objects(image_data: ImageData, objects: list[str], show_result: bool = True) -> str:
+    """
+    Call this function when you need to know the depth value and spatial relation of the objects in the image.
+
+    Args:
+        image_data (ImageData): The image data to get the depth value and spatial relation of the objects
+        show_result (bool): Whether to print the result
+        objects (list[str]): The objects to get the depth value and spatial relation
+
+    Returns:
+        str: The spatial relation of the objects
+    """
+
+    position_list = []
+
+    _, grayscale_depth_map, _ = depth_client.predict(file(image_data.local_path), api_name="/on_submit")
+
+    depth_map = Image.open(grayscale_depth_map).convert("L")
+    depth_map.save("./.tmp/depth_map.png")
+    depth_map = np.array(depth_map)
+    # normalize the depth map to 0-1
+    depth_map = depth_map / 255.0
+
+    assert objects is not None, "Objects are not specified."
+    for object in objects:
+        _, result_json = detection_client.predict(file(image_data.local_path), object, 0.3, 0.3)
+
+        for bbox, phrase in zip(result_json['bboxes'], result_json['phrases']):
+
+            relative_bbox = [
+                (bbox[0] - bbox[2] / 2), 
+                (bbox[1] - bbox[3] / 2), 
+                (bbox[0] + bbox[2] / 2), 
+                (bbox[1] + bbox[3] / 2)
+            ]
+
+            absolute_bbox = [
+                int(relative_bbox[0] * image_data.image.width), 
+                int(relative_bbox[1] * image_data.image.height), 
+                int(relative_bbox[2] * image_data.image.width), 
+                int(relative_bbox[3] * image_data.image.height)
+            ]
+
+            # from IPython import embed; embed()
+
+            # calulate the average depth value of the object
+            object_depth_value = depth_map[absolute_bbox[1]:absolute_bbox[3], absolute_bbox[0]:absolute_bbox[2]].mean()
+            position_list.append({"object": object, "relative_bbox": relative_bbox, "phrase": phrase, "relative_depth_value": object_depth_value})
+
+    # gain depth map of the image
+    pose_info_str = ""
+    for object_pose_info in position_list:
+        pose_info_str += f"{object_pose_info['object']}, bounding box: {object_pose_info['relative_bbox']}, depth value: {object_pose_info['relative_depth_value']}\n"
+
+    print(pose_info_str)
+
+    llm_messages = [
+        {"role": "system", "content": "You are a helpful assistant that aids users in understanding the spatial relationships of objects in an image. You can access the average depth value (ranging from 0 to 1, where 0 is shallow and 1 is deep) for each object region and their bounding box coordinates (x1, y1, x2, y2), also ranging from 0 to 1, with (0, 0) as the top-left corner. Use descriptive language to explain the positional relationships without including precise values."},
+        
+        {"role": "user", "content": f"{pose_info_str}\nPlease describe the spatial relation of the objects in the image."}
+    ]
+    result = llm_client.chat_completion(llm_messages)
+
+    # from IPython import embed; embed()
+
+    if show_result:
+        print(f"Spatial relation of the objects:\n{result}")

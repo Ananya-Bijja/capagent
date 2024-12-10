@@ -1,9 +1,6 @@
 # EXAMPLE: Captioning an image about a political event.
 # USER IMAGE stored in example_image_data as ImageData.
-# USER REQUEST #: Create a detailed description of the image, focusing on the two central figures. Highlight their attire, expressions, and gestures, noting any significant interactions with the crowd. Mention the background elements, such as the signs and supporters, to provide context. Emphasize the contrast between the two scenes, capturing the energy and atmosphere of each event. The description should be informative and balanced with a formal tone.
-
-Constraints:
-
+# USER REQUEST #: Please create a detailed description of the image, focusing on the two central figures. Highlight their attire, expressions, and gestures, noting any significant interactions with the crowd. Mention the background elements, such as the signs and supporters, to provide context. Here are some constraints
 Semantic Constraints: Maintain neutrality and objectivity.
 Format Constraints: Use a structured paragraph format.
 Content Constraints: Focus on attire, expressions, gestures, and crowd interactions. Avoid speculative or unrelated details.
@@ -26,13 +23,6 @@ Search result:
 FOX 5 NY | After her defeat to Donald Trump, should Kamala Harris attempt a second run for the White House in 2028? Comment below! #fox5ny... | Instagram
 Bombshell Iowa poll puts Harris ahead of Trump in state he has won twice | The Independent
 Video Harris attacks Trump’s vow to ‘protect women’ whether they ‘like it or not’ - ABC News
-Kili Goodrich | vice president kamala harris arizona rally 10/31 talkingstick amphitheater phoenix, arizona 🇵🇸 #kamalaharris #vpkamalaharris... | Instagram
-Harris Makes Final Push to Engage Latino Voters in Arizona, Nevada | The Epoch Times
-Runner-up on the Apprentice insists Donald Trump is in 'Doom loop' over Kamala Harris because he just wants to be liked | The US Sun
-Kamala Harris accepts DNC’s ceremonial nomination for president 100 miles away from convention site
-Harris and Trump to hold dueling rallies tonight in Milwaukee ahead of election - YouTube
-Kamala Harris and Tim Walz embark on a bus tour in Pennsylvania before the Democratic convention in Chicago - The Press Democrat
-First Person | 'This is something I can do now’: What Kamala Harris’ ascension means for girls of color | Bridge Michigan
 THOUGHT 2: The man on the left is Donald Trump, and the woman on the right is Kamala Harris, and they are at campaign events. I need to integrate this information into caption. I use the add_keywords_to_caption tool to do this.
 ACTION 2:
 ```python

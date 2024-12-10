@@ -98,7 +98,7 @@ If you want to use the search function, please turn on the "Use Google Search an
 
 ## Video Demo
 
-Comming soon ...
+[![CapAgent](https://img.youtube.com/vi/YU1_dNeZr6Q/0.jpg)](https://www.youtube.com/watch?v=YU1_dNeZr6Q)
 
 
 # Acknowledgement

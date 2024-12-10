@@ -120,7 +120,7 @@ def count_sentences(caption: str, show_result: bool = True) -> int:
 def shorten_caption(caption: str, max_words: int = None, max_sentences: int = None, show_result: bool = True) -> str:
     """
     Shorten the caption within the max length while maintaining key information.
-    
+    Before calling this function, you should call the count_words or count_sentences function to check if the caption is already short enough.
     Args:
         caption (str): The original caption text to be shortened
         max_words (int): Maximum number of words allowed in the shortened caption
@@ -195,7 +195,7 @@ def change_caption_sentiment(caption: str, sentiment: str, show_result: bool = T
 def extend_caption(image_data: ImageData, caption: str, iteration: int, show_result: bool = True) -> str:
     """
     Call this function when you need to extend the caption to include more details. 
-
+    Before calling this function, you should call the count_words or count_sentences function to check if the caption is already detailed enough.
     Args:
         image_data (ImageData): The image data to extend the caption
         caption (str): The caption to extend
@@ -258,12 +258,12 @@ def add_keywords_to_caption(caption: str, keywords: list[str], show_result: bool
     This function will automatically print the result by setting show_result to True, with the added keywords and the number of words in the caption.
     """
     system_prompt = "You are a helpful assistant that can help users to add keywords to the caption. Please ensure the readability of the output caption."
-    user_input = {"role": "user", "content": f"Caption: {caption}. Keywords: {keywords}. Directly output the caption without any other words."}
+    user_input = {"role": "user", "content": f"Please add these keywords: {keywords} to the caption:\n{caption}. Directly output your answer without any other words."}
     messages = [{"role": "system", "content": system_prompt}, user_input]
     result = llm_client.chat_completion(messages)
 
     if show_result:
-        print(f"Recaptioned caption: {result}")
+        print(f"Caption with keywords: {result}")
 
     return result
 

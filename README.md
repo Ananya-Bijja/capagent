@@ -1,7 +1,14 @@
 # CapAgent <img src="assets/readme/pencil.png" width="25"/>
 
-This is the repo for CapAgent, an agent system with a variety of tools specifically designed to control the image captioning process. As shown in the following figure, like a general agent, CapAgent’s workflow includes three main steps: planning, tool usage, and observation. When the user inputs an image and a caption query, the CapAgent will generate a series of thoughts and corresponding actions to tackle the user request. The technical report for CapAgent will be released soon.
+## Introduction
 
+This is the repo for CapAgent, an agent system with a variety of tools specifically designed to control the image captioning process. As shown in the following figure, like a general agent, CapAgent’s workflow includes three main steps: planning, tool usage, and observation. When the user inputs an image and a caption query, the CapAgent will generate a series of thoughts and corresponding actions to tackle the user request. The technical report for CapAgent will be released soon.
+<div align="center">
+<img src="assets/readme/intro.png">
+</div>
+
+## Methodology
+Our CapAgent is build based on ReAct prompt engineering, it can generate a series of thoughts and corresponding actions to tackle the complex caption request.
 <div align="center">
 <img src="assets/readme/method.png"/>
 </div>

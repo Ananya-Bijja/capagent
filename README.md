@@ -3,7 +3,7 @@
 ## Introduction
 
 This is the repo for CapAgent, an agent system with a variety of tools specifically designed to control the image captioning process. 
-Users often give simple instructions like 'please describe the image,' but they expect detailed, meaningful outputs. The challenges lie in transforming these vague inputs into professional instructions and generating descriptions that align precisely with user needs. CapAgent addresses this by refining user inputs automatically and leveraging tools to ensure captions meet expectations effectively. The technical report for CapAgent will be released soon.
+Users often give simple instructions like 'please describe the image,' but they expect detailed, meaningful outputs. The challenges lie in transforming these vague inputs into professional instructions and generating descriptions that align precisely with user needs. CapAgent addresses this by refining user inputs automatically and leveraging tools to ensure captions meet expectations effectively. The technical report for CapAgent is [here](https://arxiv.org/abs/2412.11025).
 <div align="center">
 <img src="assets/readme/intro.png">
 </div>
@@ -111,3 +111,17 @@ We would like to thank the authors of following awesome works:
 
 ## Contact
 Contact me if you have any questions. Email: wangxr@bupt.edu.cn
+
+## Citation
+If you find this work helpful, please consider giving it a star and citing our technical report: 
+```
+@misc{wang2024simpleprofessionalcombinatorialcontrollable,
+      title={From Simple to Professional: A Combinatorial Controllable Image Captioning Agent}, 
+      author={Xinran Wang and Muxi Diao and Baoteng Li and Haiwen Zhang and Kongming Liang and Zhanyu Ma},
+      year={2024},
+      eprint={2412.11025},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2412.11025}, 
+}
+```

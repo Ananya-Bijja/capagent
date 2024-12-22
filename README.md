@@ -3,7 +3,7 @@
 ## Introduction
 
 This is the repo for CapAgent, an agent system with a variety of tools specifically designed to control the image captioning process. 
-Users often give simple instructions like 'please describe the image,' but they expect detailed, meaningful outputs. The challenges lie in transforming these vague inputs into professional instructions and generating descriptions that align precisely with user needs. CapAgent addresses this by refining user inputs automatically and leveraging tools to ensure captions meet expectations effectively. The technical report for CapAgent is [here](https://arxiv.org/abs/2412.11025).
+Users often give simple instructions like 'please describe the image,' but they expect detailed, meaningful outputs. The challenges lie in transforming these vague inputs into professional instructions and generating descriptions that align precisely with user needs. CapAgent addresses this by refining user inputs automatically and leveraging tools to ensure captions meet expectations effectively. The technical report for CapAgent is [here](https://arxiv.org/abs/2412.11025). We'll continue to update this repo and add more tools.
 <div align="center">
 <img src="assets/readme/intro.png">
 </div>

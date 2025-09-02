@@ -6,7 +6,8 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 
 
-embed_model = HuggingFaceEmbedding(model_name="/mnt/sdc/huggingface/model_hub/bge-m3")
+#embed_model = HuggingFaceEmbedding(model_name="/mnt/sdc/huggingface/model_hub/bge-m3")
+embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
 
 
 def load_vector_store(collection_name):

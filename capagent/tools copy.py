@@ -74,11 +74,105 @@ def visual_question_answering_image(query: str, image: Image.Image, show_result:
     return result
 
 
+'''def crop_object_region_image(image: Image.Image, object_name: str, save_path="./.tmp/crop_image.png") -> Image.Image:
+    """
+    Crop a detected object region from a PIL.Image object.
+    Returns the cropped PIL.Image.
+    """
+    # Run object detection on the raw image
+    _, result_json = detection_client.predict(file(save_path), object_name, 0.3, 0.3)
+    bbox = result_json['bboxes'][0]  # cxcywh, relative
+    width, height = image.size
+
+    # Convert to absolute coordinates
+    abs_bbox = [
+        int((bbox[0] - bbox[2] / 2) * width), 
+        int((bbox[1] - bbox[3] / 2) * height), 
+        int((bbox[0] + bbox[2] / 2) * width), 
+        int((bbox[1] + bbox[3] / 2) * height)
+    ]
+
+    crop_image = image.crop(abs_bbox)
+    crop_image.save(save_path)
+    return crop_image'''
+
+
+'''def counting_object_image(image: Image.Image, object_name: str = None, show_result: bool = True) -> int:
+    """
+    Count the number of occurrences of an object in the PIL.Image.
+    """
+    _, result_json = detection_client.predict(file("./.tmp/temp_image.png"), object_name, 0.3, 0.3)
+    count = len(result_json["phrases"])
+    if show_result:
+        print(f"There are {count} {object_name}(s) in the image.")
+    return count
+'''
+
+'''def spatial_relation_of_objects_image(image: Image.Image, objects: list[str], show_result: bool = True) -> str:
+    """
+    Describe the spatial relation of objects in a PIL.Image directly.
+    """
+    position_list = []
+
+    _, grayscale_depth_map, _ = depth_client.predict(file("./.tmp/temp_image.png"), api_name="/on_submit")
+    depth_map = Image.open(grayscale_depth_map).convert("L")
+    depth_map = np.array(depth_map) / 255.0  # normalize
+
+    for object_name in objects:
+        _, result_json = detection_client.predict(file("./.tmp/temp_image.png"), object_name, 0.3, 0.3)
+        for bbox, phrase in zip(result_json['bboxes'], result_json['phrases']):
+            rel_bbox = [(bbox[0] - bbox[2] / 2), (bbox[1] - bbox[3] / 2), (bbox[0] + bbox[2] / 2), (bbox[1] + bbox[3] / 2)]
+            abs_bbox = [int(rel_bbox[0]*image.width), int(rel_bbox[1]*image.height), int(rel_bbox[2]*image.width), int(rel_bbox[3]*image.height)]
+            depth_value = depth_map[abs_bbox[1]:abs_bbox[3], abs_bbox[0]:abs_bbox[2]].mean()
+            position_list.append({"object": object_name, "relative_bbox": rel_bbox, "phrase": phrase, "relative_depth_value": depth_value})
+
+    pose_info_str = "\n".join([f"{p['object']}, bbox: {p['relative_bbox']}, depth: {p['relative_depth_value']}" for p in position_list])
+
+    llm_messages = [
+        {"role": "system", "content": "You are a helpful assistant describing spatial relationships of objects in an image."},
+        {"role": "user", "content": f"{pose_info_str}\nDescribe the spatial relation of the objects."}
+    ]
+
+    result = llm_client.chat_completion(llm_messages)
+    if show_result:
+        print(f"Spatial relation of objects:\n{result}")
+
+    return result'''
 
 
 
+'''def visual_question_answering(query: str, image_data: ImageData, show_result: bool = True) -> str:
+    """
+    Answer a question about the image.
+    
+    Args:
+        query (str): The question to answer
+        image_data (ImageData): The image data to answer the question about
+        show_result (bool): Whether to print the result
+    Returns:
+        str: The answer to the question
+    """
+    messages = [
+        {
+            "role": "user", 
+            "content": [
+                {
+                    'type': 'image_url', 
+                    'image_url': {
+                        'url': f"data:image/jpeg;base64,{encode_pil_to_base64(image_data.image)}"
+                    }
+                },
+                {'type': 'text', 'text': query}
+            ]
+        }
+    ]
 
+    result = mllm_client.chat_completion(messages)
+    if show_result:
+        print(f"Answer to the question: {result}")
 
+    return result
+  '''  
 
 def count_words(caption: str, show_result: bool = True) -> int:
     """
@@ -256,7 +350,56 @@ def extend_caption(image: Image.Image, caption: str, iteration: int = 1, show_re
 
 
 
+'''def extend_caption(image_data: ImageData, caption: str, iteration: int, show_result: bool = True) -> str:
+    """
+    Call this function when you need to extend the caption to include more details. 
+    Before calling this function, you should call the count_words or count_sentences function to check if the caption is already detailed enough.
+    Args:
+        image_data (ImageData): The image data to extend the caption
+        caption (str): The caption to extend
+        iteration (int): The number of iterations to ask and answer questions
+        show_result (bool): Whether to print the result
+    
+    Returns:
+        str: The extended caption
+        
+    This function will automatically print the result by setting show_result to True, with the extended caption and the number of words in the caption.
+    """
+    system_prompt = "You are a helpful assistant that can help users to extend the caption to include more details. You can ask one or more questions about the image to the user. The user will answer each question. After you get all the answers, you can add more information to the caption according to the answers."
+    
+    user_input = {"role": "user", "content": f"Caption: {caption}. Please generate a question to extend the caption."}
+    llm_messages = [{"role": "system", "content": system_prompt}, user_input]
+    
+    for _ in range(iteration):
+        question = llm_client.chat_completion(llm_messages)
+        mllm_message = [{
+            "role": "user", 
+            "content": [
+                {
+                    'type': 'image_url', 
+                    'image_url': {
+                        'url': f"data:image/jpeg;base64,{encode_pil_to_base64(image_data.image)}"
+                    }
+                },
+                {'type': 'text', 'text': question}
+            ]
+        }]
+        answer = mllm_client.chat_completion(mllm_message)
+        llm_messages += [
+            {"role": "assistant", "content": f"Question: {question}"}, 
+            {"role": "user", "content": f"Answer: {answer}. Please generate a new question."}
+        ]
+    
+    llm_messages += [{"role": "user", "content": f"Please extend the caption according to the questions and answers. Caption: {caption}. Directly output the extended caption without any other words."}]
+    result = llm_client.chat_completion(llm_messages)
+    
+    if show_result:
+        print(f"Extended caption: {result}.")
+        count_words(result, show_result=True)
+        count_sentences(result, show_result=True)
 
+    return result
+'''
 
 def add_keywords_to_caption(caption: str, keywords: list[str], show_result: bool = True) -> str:
     """
@@ -376,25 +519,23 @@ def google_lens_search(image_data: ImageData, show_result: bool = True, top_k: i
     return search_result
 
 
-def crop_object_region(image: Image.Image, object: str) -> Image.Image:
+def crop_object_region(image_data: ImageData, object: str) -> str:
     """
-    Crop the region of the given object in an image.
+    Call this function when you need to crop the object region in the image.
 
     Args:
-        image (PIL.Image.Image): The input image.
-        object (str): The object to crop.
+        image_data (ImageData): The image data to crop the object region
+        object (str): The object to crop
     
     Returns:
-        PIL.Image.Image: The cropped image containing the object region.
+        ImageData: The image data contains the cropped object region image
     """ 
 
-    # Run detection (assuming `detection_client.predict` accepts raw image)
-    _, result_json = detection_client.predict(file(image), object, 0.3, 0.3)  
-    bbox = result_json['bboxes'][0]  # cxcywh (relative)
-
-    width, height = image.size
+    _, result_json = detection_client.predict(file(image_data.local_path), object, 0.3, 0.3)  
+    bbox = result_json['bboxes'][0]  # cxcywh, relative position
+    width, height = image_data.image.size
     
-    # Convert to absolute xyxy
+    # turn to absolute position
     bbox = [
         int((bbox[0] - bbox[2] / 2) * width), 
         int((bbox[1] - bbox[3] / 2) * height), 
@@ -402,83 +543,59 @@ def crop_object_region(image: Image.Image, object: str) -> Image.Image:
         int((bbox[1] + bbox[3] / 2) * height)
     ]
 
-    # Crop
-    crop_image = copy.deepcopy(image).crop((bbox[0], bbox[1], bbox[2], bbox[3]))
-
-    # Optional: save locally
+    # crop the image
+    crop_image = copy.deepcopy(image_data.image).crop((bbox[0], bbox[1], bbox[2], bbox[3]))
     crop_image.save("./.tmp/crop_image.png")
+    crop_image_data = ImageData(image=crop_image, image_url=f"{IMAGE_SERVER_DOMAIN_NAME}/.tmp/crop_image.png", local_path="./.tmp/crop_image.png")
+    
+    return crop_image_data
 
-    return crop_image
 
-
-def counting_object(image: Image.Image, object: str = None, show_result: bool = True):
+def counting_object(image_data: ImageData, object: str = None, show_result: bool = True):
     """
-    Count the number of the given object in the image.
+    Call this function when you need to count the number of the object in the image.
 
     Args:
-        image (PIL.Image.Image): The input image
+        image_data (ImageData): The image data to count the object
         object (str): The object to count
         show_result (bool): Whether to print the result
-
-    Returns:
-        int: Number of detected objects
+    
+    This function will automatically print the the number of the object by setting show_result to True.
     """
-    # Save temp file for the detection client
-    os.makedirs("./.tmp", exist_ok=True)
-    temp_path = "./.tmp/temp_image.png"
-    image.save(temp_path)
 
-    # Run detection
-    _, result_json = detection_client.predict(file(temp_path), object, 0.3, 0.3)
+    _, result_json = detection_client.predict(file(image_data.local_path), object, 0.3, 0.3)
+    if show_result:
+        print(f'There are {len(result_json["phrases"])} {result_json["phrases"][0]} in the image.')
 
-    count = len(result_json.get("phrases", []))
-    if show_result and count > 0:
-        print(f"There are {count} {result_json['phrases'][0]} in the image.")
-    elif show_result:
-        print("No objects detected.")
-
-    return count
-
-
-
-from PIL import Image
-import numpy as np
-import os
-
-def spatial_relation_of_objects(image: Image.Image, objects: list[str], show_result: bool = True) -> str:
+def spatial_relation_of_objects(image_data: ImageData, objects: list[str], show_result: bool = True) -> str:
     """
-    Get the depth value and spatial relation of the objects in the image.
+    Call this function when you need to know the depth value and spatial relation of the objects in the image.
 
     Args:
-        image (PIL.Image.Image): The image to process
-        objects (list[str]): The objects to analyze
+        image_data (ImageData): The image data to get the depth value and spatial relation of the objects
         show_result (bool): Whether to print the result
+        objects (list[str]): The objects to get the depth value and spatial relation
 
     Returns:
         str: The spatial relation of the objects
     """
 
-    # Save temp image for processing
-    os.makedirs("./.tmp", exist_ok=True)
-    temp_path = "./.tmp/temp_image.png"
-    image.save(temp_path)
-
     position_list = []
 
-    # Generate depth map
-    _, grayscale_depth_map, _ = depth_client.predict(file(temp_path), api_name="/on_submit")
+    _, grayscale_depth_map, _ = depth_client.predict(file(image_data.local_path), api_name="/on_submit")
 
     depth_map = Image.open(grayscale_depth_map).convert("L")
     depth_map.save("./.tmp/depth_map.png")
     depth_map = np.array(depth_map)
-    depth_map = depth_map / 255.0  # normalize to 0-1
+    # normalize the depth map to 0-1
+    depth_map = depth_map / 255.0
 
     assert objects is not None, "Objects are not specified."
-
     for object in objects:
-        _, result_json = detection_client.predict(file(temp_path), object, 0.3, 0.3)
+        _, result_json = detection_client.predict(file(image_data.local_path), object, 0.3, 0.3)
 
         for bbox, phrase in zip(result_json['bboxes'], result_json['phrases']):
+
             relative_bbox = [
                 (bbox[0] - bbox[2] / 2), 
                 (bbox[1] - bbox[3] / 2), 
@@ -487,41 +604,33 @@ def spatial_relation_of_objects(image: Image.Image, objects: list[str], show_res
             ]
 
             absolute_bbox = [
-                int(relative_bbox[0] * image.width), 
-                int(relative_bbox[1] * image.height), 
-                int(relative_bbox[2] * image.width), 
-                int(relative_bbox[3] * image.height)
+                int(relative_bbox[0] * image_data.image.width), 
+                int(relative_bbox[1] * image_data.image.height), 
+                int(relative_bbox[2] * image_data.image.width), 
+                int(relative_bbox[3] * image_data.image.height)
             ]
 
-            # calculate average depth of the object
-            object_depth_value = depth_map[absolute_bbox[1]:absolute_bbox[3], absolute_bbox[0]:absolute_bbox[2]].mean()
-            position_list.append({
-                "object": object,
-                "relative_bbox": relative_bbox,
-                "phrase": phrase,
-                "relative_depth_value": object_depth_value
-            })
+            # from IPython import embed; embed()
 
-    # Build depth map string
+            # calulate the average depth value of the object
+            object_depth_value = depth_map[absolute_bbox[1]:absolute_bbox[3], absolute_bbox[0]:absolute_bbox[2]].mean()
+            position_list.append({"object": object, "relative_bbox": relative_bbox, "phrase": phrase, "relative_depth_value": object_depth_value})
+
+    # gain depth map of the image
     pose_info_str = ""
     for object_pose_info in position_list:
-        pose_info_str += (
-            f"{object_pose_info['object']}, bounding box: {object_pose_info['relative_bbox']}, "
-            f"depth value: {object_pose_info['relative_depth_value']}\n"
-        )
+        pose_info_str += f"{object_pose_info['object']}, bounding box: {object_pose_info['relative_bbox']}, depth value: {object_pose_info['relative_depth_value']}\n"
 
-    if show_result:
-        print(pose_info_str)
+    print(pose_info_str)
 
-    # LLM explanation
     llm_messages = [
-        {"role": "system", "content": "You are a helpful assistant that aids users in understanding the spatial relationships of objects in an image. You can access the average depth value (0 shallow, 1 deep) and bounding box coordinates (0-1, normalized). Use descriptive language to explain positions without including exact values."},
+        {"role": "system", "content": "You are a helpful assistant that aids users in understanding the spatial relationships of objects in an image. You can access the average depth value (ranging from 0 to 1, where 0 is shallow and 1 is deep) for each object region and their bounding box coordinates (x1, y1, x2, y2), also ranging from 0 to 1, with (0, 0) as the top-left corner. Use descriptive language to explain the positional relationships without including precise values."},
+        
         {"role": "user", "content": f"{pose_info_str}\nPlease describe the spatial relation of the objects in the image."}
     ]
-
     result = llm_client.chat_completion(llm_messages)
+
+    # from IPython import embed; embed()
 
     if show_result:
         print(f"Spatial relation of the objects:\n{result}")
-
-    return result

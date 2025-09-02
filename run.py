@@ -33,11 +33,13 @@ def extract_tool_comments(file_path):
 
 
 def run_agent(user_query: str, working_dir: str, image_paths: list[str] = None):
-
+    print("****in run agent*****")
     prompt_generator = ReActPrompt()
+    print("prompt succesful")
     executor = CodeExecutor(working_dir=working_dir, use_tools=True)
+    print("code exec hogaya")
     parser = Parser()
-
+    print("IMage paths sentto run_agent",image_paths)
     if image_paths is not None:
         image_loading_result = executor.loading_images(image_paths)
         if image_loading_result[0] != 0:
@@ -45,6 +47,8 @@ def run_agent(user_query: str, working_dir: str, image_paths: list[str] = None):
     else:
         image_loading_result = None
 
+
+    print("****in run agent 2*****")
     user_proxy = CapAgent(
         name="Assistant",
         prompt_generator = prompt_generator,
@@ -56,18 +60,34 @@ def run_agent(user_query: str, working_dir: str, image_paths: list[str] = None):
         parser=parser
     )
 
+    print("****in run agent3*****")
     # The user proxy agent is used for interacting with the assistant agent
     # and executes tool calls.
     
     assistant = ConversableAgent(
         name="planner",
         llm_config={
-            # "config_list": [
-            #     {"model": "llama3.1-8B", "api_key": "EMPTY", "base_url": "http://10.112.8.137:30000/v1", "price": [0, 0]}
-            # ]
             "config_list": [
-                {"model": "gpt-4o", "api_key": os.environ['OPENAI_API_KEY']}
-            ]
+        {
+            "model": "deepseek/deepseek-r1-0528:free",
+            "api_key": os.environ["OPENROUTER_API_KEY"],
+            "base_url": "https://openrouter.ai/api/v1",
+            "price": [0, 0]
+        },
+        {
+            "model": "qwen/qwen2.5-7b-instruct:free",
+            "api_key": os.environ["OPENROUTER_API_KEY"],
+            "base_url": "https://openrouter.ai/api/v1",
+            "price": [0, 0]
+        },
+        {
+            "model": "mistralai/mistral-7b-instruct:free",
+            "api_key": os.environ["OPENROUTER_API_KEY"],
+            "base_url": "https://openrouter.ai/api/v1",
+            "price": [0, 0]
+        }
+    ]
+
         },
         human_input_mode="NEVER",
         max_consecutive_auto_reply=10,
@@ -75,7 +95,7 @@ def run_agent(user_query: str, working_dir: str, image_paths: list[str] = None):
         system_message=ASSISTANT_SYSTEM_MESSAGE,
     )
 
-    
+    print("ippud initiate chat aithadhi")
     chat_result, messages = user_proxy.initiate_chat(
         assistant, 
         message=user_query, 
@@ -96,4 +116,4 @@ Content Constraints: Focus on the central figure, clergy, and ceremonial element
 Avoid unrelated or speculative details.
 Search Constraints: This seems to be a special moment in history, please search it on web."""
     chat_result, messages = run_agent(user_query=user_query, working_dir=".", image_paths=["assets/figs/charles_on_the_throne.png"])
-    from IPython import embed; embed()
+    #from IPython import embed; embed()

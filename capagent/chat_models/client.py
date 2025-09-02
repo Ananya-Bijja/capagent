@@ -1,65 +1,73 @@
 import os
 import concurrent.futures
-import openai
+from openai import OpenAI
+from tqdm import tqdm
 import PIL.Image
 import gradio_client
 
-from tqdm import tqdm
-from io import BytesIO
 
-
-from capagent.utils import encode_pil_to_base64
-
-
+# ------------------ LLMChatClient with fallback ------------------
 class LLMChatClient:
 
-    def __init__(self, url=None, api_key='EMPTY', using_gpt4o=False) -> None:
-        if not using_gpt4o:
-            self.client = openai.Client(base_url=url, api_key=api_key)
-            self.model = 'default'
-        else:
-            print("Using GPT-4o as LLM Chat Client")
-            self.client = openai.Client(api_key=os.environ['OPENAI_API_KEY'])
-            self.model = 'gpt-4o'
-    
+    def __init__(self, api_key=None, models=None):
+        self.client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=api_key or os.environ.get("OPENROUTER_API_KEY")
+        )
+        # List of free fallback models (you can extend this)
+        self.models = models or [
+            "deepseek/deepseek-chat-v3-0324:free",
+            "qwen/qwen2.5-7b-instruct:free",
+            "nousresearch/nous-capybara-7b:free",
+            "mistralai/mistral-7b-instruct:free"
+        ]
+
+    def _try_models(self, func, *args, **kwargs):
+        """Try all models in fallback order until success."""
+        last_error = None
+        for model in self.models:
+            try:
+                print(f"🔄 Trying model: {model}")
+                return func(model, *args, **kwargs)
+            except Exception as e:
+                print(f"⚠️ Model {model} failed: {e}")
+                last_error = e
+        raise RuntimeError(f"All models failed. Last error: {last_error}")
+
     def text_completion(self, prompt, temperature=0, max_tokens=512):
-        
-        response = self.client.completions.create(
-            model=self.model,
-            prompt=prompt,
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
-            
-        return response.choices[0].text
+        def _call(model, prompt, temperature, max_tokens):
+            resp = self.client.completions.create(
+                model=model,
+                prompt=prompt,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            return resp.choices[0].text
 
-    def chat_completion(self, messages):
+        return self._try_models(_call, prompt, temperature, max_tokens)
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            temperature=0,
-            max_tokens=1024,
-        )
+    def chat_completion(self, messages, temperature=0, max_tokens=1024):
+        def _call(model, messages, temperature, max_tokens):
+            resp = self.client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            return resp.choices[0].message.content
 
-        return response.choices[0].message.content
-
+        return self._try_models(_call, messages, temperature, max_tokens)
 
     def handle_text_completion(self, request):
-        prompt = request['prompt']
-        result = self.text_completion(prompt)
-        return {"id": request['id'], "result": result}
+        return {"id": request['id'], "result": self.text_completion(request['prompt'])}
 
     def handle_chat_completion(self, request):
-        messages = request['messages']
-        result = self.chat_completion(messages)
-        return {"id": request['id'], "result": result}
+        return {"id": request['id'], "result": self.chat_completion(request['messages'])}
 
-    def process_requests_multithreaded(self, requests, max_parallel_requests=8, show_progress=False):
+    def process_requests_multithreaded(self, requests, max_parallel_requests=8):
         results = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_parallel_requests) as executor:
             futures = []
-            # Add progress bar with total number of requests
             with tqdm(total=len(requests), desc="Processing requests") as pbar:
                 for request in requests:
                     if request['type'] == 'text':
@@ -67,37 +75,53 @@ class LLMChatClient:
                     elif request['type'] == 'chat':
                         futures.append(executor.submit(self.handle_chat_completion, request))
 
-                # As requests complete, update the progress bar
                 for future in concurrent.futures.as_completed(futures):
                     results.append(future.result())
-                    pbar.update(1)  # Update progress bar after each request completion
+                    pbar.update(1)
         return results
-    
 
+
+# ------------------ MLLMChatClient with fallback ------------------
 class MLLMChatClient:
-    
-    def __init__(self, url=None, api_key="EMPTY", using_gpt4o=False) -> None:
-        if not using_gpt4o:
-            self.client = openai.Client(base_url=url, api_key=api_key)
-            self.model = 'default'
-        else:
-            self.client = openai.Client(api_key=os.environ['OPENAI_API_KEY'])
-            self.model = 'gpt-4o'
 
-    def is_url(self, image):
-        return image.startswith("http")
-
-    def chat_completion(self, messages, temperature=0, max_tokens=512, timeout=20):
-
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            timeout=timeout
+    def __init__(self, api_key=None, models=None):
+        self.client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=api_key or os.environ.get("OPENROUTER_API_KEY")
         )
-                    
-        return response.choices[0].message.content
+        self.models = models or [
+            "deepseek/deepseek-chat-v3-0324:free",
+            "qwen/qwen2.5-7b-instruct:free",
+            "nousresearch/nous-capybara-7b:free",
+            "mistralai/mistral-7b-instruct:free"
+        ]
+
+    def _try_models(self, func, *args, **kwargs):
+        last_error = None
+        for model in self.models:
+            try:
+                print(f"🔄 Trying model: {model}")
+                return func(model, *args, **kwargs)
+            except Exception as e:
+                print(f"⚠️ Model {model} failed: {e}")
+                last_error = e
+        raise RuntimeError(f"All multimodal models failed. Last error: {last_error}")
+
+    def chat_completion(self, messages, temperature=0, max_tokens=512, timeout=None):
+        def _call(model, messages, temperature, max_tokens, timeout):
+            resp = self.client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                timeout=timeout  # ✅ pass timeout
+            )
+            return resp.choices[0].message.content
+
+        return self._try_models(_call, messages, temperature, max_tokens, timeout)
+
+
+
 
 
     
@@ -113,10 +137,13 @@ class SegmentationClient:
     
 
 # llm_client = LLMChatClient(url='http://10.112.8.137:30000/v1')
-llm_client = LLMChatClient(using_gpt4o=True)
+#llm_client = LLMChatClient(using_gpt4o=True)
+llm_client = LLMChatClient()
+
 try:
     # mllm_client = MLLMChatClient(url='http://10.112.8.137:31000/v1')
-    mllm_client = MLLMChatClient(using_gpt4o=True)
+    #mllm_client = MLLMChatClient(using_gpt4o=True)
+    mllm_client=MLLMChatClient()
 except Exception as e:
     raise Warning("MLLMChatClient is not initialized.")
     mllm_client = None

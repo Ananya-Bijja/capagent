@@ -115,5 +115,5 @@ if __name__ == "__main__":
                         outputs=[gr.Image(type="pil"), "json"]
                     )
     
-    demo.launch(share=False, server_name=args.host, server_port=args.port, show_error=True)
+    demo.launch(share=True, server_name=args.host, server_port=args.port, show_error=True)
 
